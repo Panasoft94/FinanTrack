@@ -7,7 +7,15 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.notifications),
+            SizedBox(width: 8),
+            Text('Notifications'),
+          ],
+        ),
+        centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),

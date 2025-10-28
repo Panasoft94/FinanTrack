@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class TransactionsScreen extends StatelessWidget {
-  const TransactionsScreen({super.key});
+class AccountsScreen extends StatelessWidget {
+  const AccountsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -10,9 +10,9 @@ class TransactionsScreen extends StatelessWidget {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.swap_horiz),
+            Icon(Icons.account_balance_wallet),
             SizedBox(width: 8),
-            Text('Transactions'),
+            Text('Gérer les comptes'),
           ],
         ),
         centerTitle: true,
@@ -20,7 +20,7 @@ class TransactionsScreen extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       body: const Center(
-        child: Text('Transactions Screen'),
+        child: Text('Écran de gestion des comptes'),
       ),
     );
   }

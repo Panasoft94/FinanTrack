@@ -7,7 +7,15 @@ class ExpenseCategoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Catégorie de dépenses'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.category),
+            SizedBox(width: 8),
+            Text('Catégorie de dépenses'),
+          ],
+        ),
+        centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),

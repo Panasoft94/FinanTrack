@@ -1,4 +1,4 @@
-import 'package:budget/screens/expense_category/expense_category_screen.dart';
+import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/notifications/notifications_screen.dart';
 import 'package:budget/screens/onboarding/onboarding_screen.dart';
 import 'package:budget/screens/settings/settings_screen.dart';
@@ -20,25 +20,7 @@ class DashboardScreen extends StatelessWidget {
             icon: Icons.swap_horiz,
             title: 'Transactions',
             onTap: () {
-              Navigator.of(context).push(_createFadeRoute(const TransactionsScreen()));
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildDashboardTile(
-            context,
-            icon: Icons.settings,
-            title: 'Paramètres',
-            onTap: () {
-              Navigator.of(context).push(_createFadeRoute(const SettingsScreen()));
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildDashboardTile(
-            context,
-            icon: Icons.category,
-            title: 'Catégorie depense',
-            onTap: () {
-              Navigator.of(context).push(_createFadeRoute(const ExpenseCategoryScreen()));
+              Navigator.of(context).push(_slideTransition(const TransactionsScreen()));
             },
           ),
           const SizedBox(height: 16),
@@ -47,7 +29,16 @@ class DashboardScreen extends StatelessWidget {
             icon: Icons.analytics,
             title: 'Statistique des données',
             onTap: () {
-              Navigator.of(context).push(_createFadeRoute(const DataStatisticsScreen()));
+              Navigator.of(context).push(_slideTransition(const DataStatisticsScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
+            icon: Icons.settings,
+            title: 'Paramètres',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const SettingsScreen()));
             },
           ),
           const SizedBox(height: 16),
@@ -56,17 +47,23 @@ class DashboardScreen extends StatelessWidget {
             icon: Icons.notifications,
             title: 'Notifications',
             onTap: () {
-              Navigator.of(context).push(_createFadeRoute(const NotificationsScreen()));
+              Navigator.of(context).push(_slideTransition(const NotificationsScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
+            icon: Icons.account_balance_wallet,
+            title: 'Gérer les comptes',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const AccountsScreen()));
             },
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-            (Route<dynamic> route) => false,
-          );
+          _showExitDialog(context);
         },
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
@@ -75,12 +72,61 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+  
+  void _showExitDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+          title: Row(
+            children: const [
+              Icon(Icons.exit_to_app, color: Colors.red),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text('Confirmation'),
+              ),
+            ],
+          ),
+          content: const Text('Voulez-vous vraiment quitter et retourner à l\'accueil ?'),
+          actionsAlignment: MainAxisAlignment.spaceAround,
+          actions: <Widget>[
+            OutlinedButton.icon(
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Annuler'),
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.grey[800],
+                side: BorderSide(color: Colors.grey[400]!),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.exit_to_app),
+              label: const Text('Quitter'),
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildDashboardTile(BuildContext context, {required IconData icon, required String title, required VoidCallback onTap}) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12), 
       ),
       child: InkWell(
         onTap: onTap,
@@ -99,12 +145,12 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Route _createFadeRoute(Widget page) {
+  PageRouteBuilder _slideTransition(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: Tween(begin: const Offset(1, 0), end: Offset.zero).animate(animation),
           child: child,
         );
       },
