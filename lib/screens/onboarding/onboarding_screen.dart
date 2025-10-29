@@ -1,4 +1,4 @@
-import 'package:budget/screens/login.dart';
+import 'package:budget/screens/create_pin.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -39,7 +39,7 @@ class OnboardingScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (BuildContext context) => const LoginPage(),
+                      builder: (BuildContext context) => const CreatePinPage(),
                     ),
                   );
                 },
