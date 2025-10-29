@@ -56,6 +56,7 @@ dependencies:
   file_saver: ^0.2.9
   excel: ^4.0.2 # Or latest, if you're also doing Excel
   open_filex: ^4.7.0
+  shared_preferences: ^2.5.3
 
 
 dev_dependencies:

@@ -1,4 +1,4 @@
-import 'package:budget/screens/home/home_screen.dart';
+import 'package:budget/screens/login.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -18,7 +18,7 @@ class OnboardingScreen extends StatelessWidget {
               const Text(
                 'Bienvenue sur Finan Track',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -39,7 +39,7 @@ class OnboardingScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (BuildContext context) => const HomeScreen(),
+                      builder: (BuildContext context) => const LoginPage(),
                     ),
                   );
                 },

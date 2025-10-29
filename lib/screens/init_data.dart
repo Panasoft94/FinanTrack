@@ -1,5 +1,5 @@
+import 'package:budget/screens/onboarding/onboarding_screen.dart';
 import 'package:flutter/material.dart';
-import 'login.dart';
 import 'package:budget/screens/database/db_helper.dart';
 
 class InitDataScreen extends StatefulWidget {
@@ -128,7 +128,7 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
 
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        MaterialPageRoute(builder: (context) => const OnboardingScreen()), // Changement ici
                             (route) => false,
                       );
                     },
