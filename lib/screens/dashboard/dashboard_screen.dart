@@ -4,6 +4,7 @@ import 'package:budget/screens/onboarding/onboarding_screen.dart';
 import 'package:budget/screens/settings/settings_screen.dart';
 import 'package:budget/screens/statistics/data_statistics_screen.dart';
 import 'package:budget/screens/transactions/transactions_screen.dart';
+import 'package:budget/screens/login.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -106,7 +107,7 @@ class DashboardScreen extends StatelessWidget {
               label: const Text('Quitter'),
               onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
                   (Route<dynamic> route) => false,
                 );
               },
