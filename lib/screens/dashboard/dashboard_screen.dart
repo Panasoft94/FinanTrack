@@ -1,6 +1,5 @@
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/notifications/notifications_screen.dart';
-import 'package:budget/screens/onboarding/onboarding_screen.dart';
 import 'package:budget/screens/settings/settings_screen.dart';
 import 'package:budget/screens/statistics/data_statistics_screen.dart';
 import 'package:budget/screens/transactions/transactions_screen.dart';

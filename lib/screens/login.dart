@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:another_flushbar/flushbar.dart';
-import 'package:budget/screens/create_pin.dart';
 import 'package:budget/screens/home/home_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:budget/screens/licence_page.dart';
-import 'package:budget/screens/onboarding/onboarding_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -93,40 +91,19 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               SizedBox(height: 24),
-              _users.isNotEmpty
-                  ? Text("Entrer pin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black))
-                  : SizedBox(height: 10),
-              _users.isNotEmpty
-                  ? Text("Veuillez entrer votre code pin de 6 chiffres !", style: TextStyle(fontStyle: FontStyle.italic), textAlign: TextAlign.center)
-                  : SizedBox(height: 10),
+                  Text("Entrer pin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
+                  SizedBox(height: 10),
+                  Text("Veuillez entrer votre code pin de 6 chiffres !", style: TextStyle(fontStyle: FontStyle.italic), textAlign: TextAlign.center),
               SizedBox(height: 10),
-              _users.isNotEmpty
-                  ? Pinput(
+              Pinput(
                 controller: controller,
                 length: 6,
                 onCompleted: _onCompleted,
                 obscureText: true,
                 autofocus: true,
-              )
-                  : const SizedBox(height: 10),
-              _users.isEmpty
-                  ? SizedBox(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => CreatePinPage()),
-                          (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                  child: Text("Créer un code pin d'accès", style: TextStyle(fontSize: 15, color: Colors.white)),
-                ),
-              )
-                  : SizedBox(height: 12),
+              ),
+
+              SizedBox(height: 12),
               Spacer(),
               if (biometricAvailable && _users.isNotEmpty) 
                 Column(
@@ -186,14 +163,6 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
       return const HomeScreen();
-    }));
-  }
-
-  void _redirectioOnboarding() {
-    print("LOGIN_PAGE: _redirectionHome called. Navigating to OnboardingScreen."); // DEBUG
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
-      return const OnboardingScreen();
     }));
   }
 
