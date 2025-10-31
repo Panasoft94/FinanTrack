@@ -44,6 +44,7 @@ class DbHelper{
   static const String NOTIFICATION_TITRE = 'notification_titre';
   static const String NOTIFICATION_CONTENU = 'notification_contenu';
   static const String NOTIFICATION_DATE = 'notification_date';
+  static const String NOTIFICATION_IS_READ = 'is_read';
 
   static const String TRANSACTION_TABLE = 'transactions';
   static const String TRANSACTION_ID = 'transaction_id';
@@ -115,7 +116,7 @@ class DbHelper{
           await db.execute("CREATE TABLE $DEVISE_TABLE($DEVISE_ID INTEGER PRIMARY KEY AUTOINCREMENT,$DEVISE_LIB TEXT,$DEVISE_VAL TEXT,$DEVISE_SYMBOLE TEXT)");
           await db.execute("CREATE TABLE $USERS_TABLE($USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,$USER_NAME TEXT,$USER_EMAIL TEXT,$USER_PASSWORD TEXT,$USER_PIN INTEGER,$USER_PHONE TEXT,$USER_ROLE TEXT,$USER_STATUS INTEGER,$USER_CREATED_AT TEXT,$USER_UPDATED_AT TEXT,$ACEPT_LICENCE INTEGER)");
           await db.execute("CREATE TABLE $CONFIG_TABLE($CONFIG_ID INTEGER PRIMARY KEY AUTOINCREMENT,$APP_NAME TEXT,$DEFAULT_LANGUAGE TEXT,$DEFAULT_YEAR INTEGER,$SELECTED_DEVISE_ID TEXT)");
-          await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT)");
+          await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT, $NOTIFICATION_IS_READ INTEGER DEFAULT 0)");
         });
   }
 
@@ -262,6 +263,11 @@ class DbHelper{
     return await dbClient!.delete(ACCOUNTS_TABLE, where: '$ACCOUNT_ID = ?', whereArgs: [id]);
   }
   
+  static Future<void> clearAccounts() async {
+    final dbClient = await getdb();
+    await dbClient!.delete(ACCOUNTS_TABLE);
+  }
+
   // Opérations CRUD pour la table des catégories (Categories)
   static Future<int> insertCategory(Map<String, dynamic> data) async {
     final dbClient = await getdb();
@@ -291,6 +297,11 @@ class DbHelper{
     final dbClient = await getdb();
     return await dbClient!.delete(CATEGORIES_TABLE, where: '$CATEGORY_ID = ?', whereArgs: [id]);
   }
+
+  static Future<void> clearCategories() async {
+    final dbClient = await getdb();
+    await dbClient!.delete(CATEGORIES_TABLE);
+  }
   
   // Opérations CRUD pour la table des devises (Devises)
   static Future<int> insertDevise(Map<String, dynamic> data) async {
@@ -315,6 +326,11 @@ class DbHelper{
   static Future<int> deleteDevise(int id) async {
     final dbClient = await getdb();
     return await dbClient!.delete(DEVISE_TABLE, where: '$DEVISE_ID = ?', whereArgs: [id]);
+  }
+
+  static Future<void> clearDevises() async {
+    final dbClient = await getdb();
+    await dbClient!.delete(DEVISE_TABLE);
   }
 
   // Opérations CRUD pour la table des utilisateurs (Users)
@@ -419,6 +435,11 @@ class DbHelper{
     return await dbClient!.delete(TRANSACTION_TABLE, where: '$TRANSACTION_ID = ?', whereArgs: [id]);
   }
 
+  static Future<void> clearTransactions() async {
+    final dbClient = await getdb();
+    await dbClient!.delete(TRANSACTION_TABLE);
+  }
+
   // Opérations CRUD pour la table des budgets (Budgets)
   static Future<int> insertBudget(Map<String, dynamic> data) async {
     final dbClient = await getdb();
@@ -459,6 +480,11 @@ class DbHelper{
     return await dbClient!.delete(BUDGET_TABLE, where: '$BUDGET_ID = ?', whereArgs: [id]);
   }
 
+  static Future<void> clearBudgets() async {
+    final dbClient = await getdb();
+    await dbClient!.delete(BUDGET_TABLE);
+  }
+
   // Récupère les transactions avec détails dans une plage de dates
   static Future<List<Map<String, dynamic>>> getTransactionsWithDetailsInRange(String startDate, String endDate) async {
     final dbClient = await getdb();
@@ -467,9 +493,9 @@ class DbHelper{
         t.*,
         a.$ACCOUNT_NAME,
         a.$ACCOUNT_ICON,
-        c.$CATEGORY_NAME as category_name,
-        c.$CATEGORY_ICON as category_icon,
-        c.$CATEGORY_COLOR as category_color
+        c.$CATEGORY_NAME,
+        c.$CATEGORY_ICON,
+        c.$CATEGORY_COLOR
       FROM $TRANSACTION_TABLE t
       LEFT JOIN $ACCOUNTS_TABLE a ON t.$ACCOUNT_ID = a.$ACCOUNT_ID
       LEFT JOIN $CATEGORIES_TABLE c ON t.$CATEGORY_ID = c.$CATEGORY_ID
@@ -478,4 +504,73 @@ class DbHelper{
     ''';
     return await dbClient!.rawQuery(query, [startDate, endDate]);
   }
+
+  // Récupère les statistiques globales pour le tableau de bord
+  static Future<Map<String, dynamic>> getDashboardStatistics() async {
+    final dbClient = await getdb();
+    Map<String, dynamic> stats = {};
+
+    // Total des comptes et solde total
+    var accountSummary = await dbClient!.rawQuery("SELECT COUNT(*) as count, SUM($ACCOUNT_BALANCE) as total FROM $ACCOUNTS_TABLE");
+    stats['accountsCount'] = Sqflite.firstIntValue(accountSummary) ?? 0;
+    stats['totalBalance'] = (accountSummary.first['total'] as double?) ?? 0.0;
+    
+    // Liste des comptes individuels
+    stats['accountsList'] = await dbClient.query(ACCOUNTS_TABLE, orderBy: '$ACCOUNT_NAME ASC');
+
+    // Nombre de transactions et de budgets actifs
+    stats['transactionsCount'] = Sqflite.firstIntValue(await dbClient.rawQuery("SELECT COUNT(*) FROM $TRANSACTION_TABLE")) ?? 0;
+    stats['activeBudgetsCount'] = Sqflite.firstIntValue(await dbClient.rawQuery("SELECT COUNT(*) FROM $BUDGET_TABLE WHERE $BUDGET_STATUS = 1")) ?? 0;
+
+    // Dépenses par catégorie
+    final List<Map<String, dynamic>> expenses = await dbClient.rawQuery('''
+      SELECT c.$CATEGORY_NAME as name, SUM(t.$MONTANT) as total
+      FROM $TRANSACTION_TABLE t
+      JOIN $CATEGORIES_TABLE c ON t.$CATEGORY_ID = c.$CATEGORY_ID
+      WHERE t.$TRANSACTION_TYPE = 'expense'
+      GROUP BY c.$CATEGORY_NAME
+    ''');
+    
+    stats['expensesByCategory'] = expenses;
+    
+    // Tendance des dépenses (30 derniers jours)
+    final String thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+    final List<Map<String, dynamic>> expenseTrend = await dbClient.rawQuery('''
+      SELECT date($TRANSACTION_DATE) as day, SUM($MONTANT) as total
+      FROM $TRANSACTION_TABLE
+      WHERE $TRANSACTION_TYPE = 'expense' AND $TRANSACTION_DATE >= ?
+      GROUP BY day
+      ORDER BY day ASC
+    ''', [thirtyDaysAgo]);
+    stats['expenseTrend'] = expenseTrend;
+
+    return stats;
+  }
+
+  // Opérations CRUD pour les notifications
+  static Future<int> insertNotification(Map<String, dynamic> data) async {
+    final dbClient = await getdb();
+    return await dbClient!.insert(TABLE_NOTIFICATIONS, data);
+  }
+
+  static Future<List<Map<String, dynamic>>> getNotifications() async {
+    final dbClient = await getdb();
+    return await dbClient!.query(TABLE_NOTIFICATIONS, orderBy: '$NOTIFICATION_DATE DESC');
+  }
+
+  static Future<int> markNotificationAsRead(int id) async {
+    final dbClient = await getdb();
+    return await dbClient!.update(TABLE_NOTIFICATIONS, {NOTIFICATION_IS_READ: 1}, where: '$NOTIFICATION_ID = ?', whereArgs: [id]);
+  }
+
+  static Future<int> deleteNotification(int id) async {
+    final dbClient = await getdb();
+    return await dbClient!.delete(TABLE_NOTIFICATIONS, where: '$NOTIFICATION_ID = ?', whereArgs: [id]);
+  }
+
+  static Future<int> clearAllNotifications() async {
+    final dbClient = await getdb();
+    return await dbClient!.delete(TABLE_NOTIFICATIONS);
+  }
+
 }

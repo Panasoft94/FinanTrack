@@ -1,3 +1,4 @@
+import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
 
 class ResetDatabaseScreen extends StatelessWidget {
@@ -25,37 +26,37 @@ class ResetDatabaseScreen extends StatelessWidget {
           _buildResetTile(
             context,
             title: 'Réinitialiser les Comptes',
-            onTap: () => _showConfirmationDialog(context, 'Comptes'),
+            onTap: () => _showConfirmationDialog(context, 'Comptes', DbHelper.clearAccounts),
           ),
           const SizedBox(height: 16),
           _buildResetTile(
             context,
             title: 'Réinitialiser les Catégories',
-            onTap: () => _showConfirmationDialog(context, 'Catégories'),
+            onTap: () => _showConfirmationDialog(context, 'Catégories', DbHelper.clearCategories),
           ),
           const SizedBox(height: 16),
           _buildResetTile(
             context,
             title: 'Réinitialiser les Transactions',
-            onTap: () => _showConfirmationDialog(context, 'Transactions'),
+            onTap: () => _showConfirmationDialog(context, 'Transactions', DbHelper.clearTransactions),
           ),
           const SizedBox(height: 16),
           _buildResetTile(
             context,
             title: 'Réinitialiser les Budgets',
-            onTap: () => _showConfirmationDialog(context, 'Budgets'),
+            onTap: () => _showConfirmationDialog(context, 'Budgets', DbHelper.clearBudgets),
           ),
           const SizedBox(height: 16),
           _buildResetTile(
             context,
-            title: 'Réinitialiser les Utilisateurs',
-            onTap: () => _showConfirmationDialog(context, 'Utilisateurs'),
+            title: 'Réinitialiser les Devises',
+            onTap: () => _showConfirmationDialog(context, 'Devises', DbHelper.clearDevises),
           ),
           const SizedBox(height: 16),
           _buildResetTile(
             context,
-            title: 'Réinitialiser la Configuration',
-            onTap: () => _showConfirmationDialog(context, 'Configuration'),
+            title: 'Réinitialiser les Notifications',
+            onTap: () => _showConfirmationDialog(context, 'Notifications', DbHelper.clearAllNotifications),
           ),
         ],
       ),
@@ -82,7 +83,7 @@ class ResetDatabaseScreen extends StatelessWidget {
     );
   }
 
-  void _showConfirmationDialog(BuildContext context, String item) {
+  void _showConfirmationDialog(BuildContext context, String item, Future<void> Function() onDelete) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -113,15 +114,17 @@ class ResetDatabaseScreen extends StatelessWidget {
             ElevatedButton.icon(
               icon: const Icon(Icons.delete_forever),
               label: const Text('Supprimer'),
-              onPressed: () {
-                // Mettez ici la logique de suppression pour l'élément 'item'
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Données de la table \'$item\' supprimées.'),
-                    backgroundColor: Colors.green[700],
-                  ),
-                );
+              onPressed: () async {
+                await onDelete();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Données de la table \'$item\' supprimées.'),
+                      backgroundColor: Colors.green[700],
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
