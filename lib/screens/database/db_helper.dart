@@ -125,7 +125,7 @@ class DbHelper{
     final List<Map<String, dynamic>> configs = await dbClient!.query(CONFIG_TABLE);
     if (configs.isEmpty) {
       final data = {
-        APP_NAME: 'Finan Track',
+        APP_NAME: 'FinanTrack',
         DEFAULT_LANGUAGE: 'Français',
         DEFAULT_YEAR: DateTime.now().year,
         SELECTED_DEVISE_ID: '1', // ID par défaut pour la devise

@@ -43,7 +43,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         if (isStartDate) {
           _startDate = picked;
         } else {
-          // Correction: S'assure d'inclure toute la journée de fin
           _endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
         }
         _loadReportData();
@@ -144,28 +143,41 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildSummaryCard(double income, double expense, double net) {
-    return Card(
-      color: Colors.grey[100],
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildSummaryColumn('Total Revenus', income, Colors.green[700]!),
-            _buildSummaryColumn('Total Dépenses', expense, Colors.red[700]!),
-            _buildSummaryColumn('Solde Net', net, net >= 0 ? Colors.blue[800]! : Colors.red[700]!),
-          ],
+    return Column(
+      children: [
+        Card(
+          color: Colors.green[50],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildSummaryRow('Total Revenus', income, Colors.green[700]!),
+          ),
         ),
-      ),
+        const SizedBox(height: 10),
+        Card(
+          color: Colors.red[50],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildSummaryRow('Total Dépenses', expense, Colors.red[700]!),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          color: Colors.blue[50],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildSummaryRow('Solde Net', net, net >= 0 ? Colors.blue[800]! : Colors.red[700]!),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSummaryColumn(String title, double amount, Color color) {
-    return Column(
+  Widget _buildSummaryRow(String title, double amount, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[800])),
-        const SizedBox(height: 5),
-        Text('${amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
+        Text(title, style: TextStyle(fontSize: 16, color: Colors.grey[800])),
+        Text('${amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
       ],
     );
   }

@@ -149,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
     }
     if (enteredPin == _users[0]['user_pin'].toString() && _users[0]['acept_licence'] == 1) {
       _redirectionHome();
-      _showFlushbar("Nous vous souhaitons la bienvenue !", Colors.green);
+      _showFlushbar("Nous vous souhaitons la bienvenue !", Colors.blue);
     } else if (enteredPin == _users[0]['user_pin'].toString() && _users[0]['acept_licence'] == 0) {
       _redirectionLicence(usersId: _users[0]['user_id']);
     } else {
@@ -221,7 +221,7 @@ class _LoginPageState extends State<LoginPage> {
 
         if (authenticated && _users[0]['acept_licence'] == 1) {
           _redirectionHome();
-          _showFlushbar("Bienvenue 👋", Colors.green);
+          _showFlushbar("Bienvenue 👋", Colors.blue);
         } else if (authenticated && _users[0]['acept_licence'] == 0) {
           _redirectionLicence(usersId: _users[0]['user_id']);
         } 

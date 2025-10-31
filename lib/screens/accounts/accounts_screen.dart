@@ -260,7 +260,7 @@ class _AddOrEditAccountFormState extends State<_AddOrEditAccountForm> {
       _selectedType = widget.account!.type;
     } else {
       _selectedType = _accountTypes.first;
-      _currencyController.text = '€';
+      _currencyController.text = 'FCFA';
     }
   }
 

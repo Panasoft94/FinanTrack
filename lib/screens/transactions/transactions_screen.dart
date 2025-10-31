@@ -228,7 +228,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       children: [
         Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
-        Text('${amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
+        Text('${amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
       ],
     );
   }
@@ -250,7 +250,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         leading: CircleAvatar(backgroundColor: categoryColor.withOpacity(0.2), child: Icon(icon, color: categoryColor, size: 24)),
         title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
-        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
       ),
     );
   }

@@ -71,14 +71,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(widget.budget.categoryIcon),
-            const SizedBox(width: 8),
-            Text(widget.budget.categoryName ?? widget.budget.name),
-          ],
-        ),
+        title: Text(widget.budget.name),
         centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
@@ -109,16 +102,55 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 50),
-            _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} €', context),
-            const Divider(height: 30),
-            _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} €', context, valueColor: Colors.orange[800]),
-            const Divider(height: 30),
-            _buildDetailRow(
-              remaining >= 0 ? 'Montant restant:' : 'Dépassement:',
-              '${remaining.abs().toStringAsFixed(2)} €',
-              context,
-              valueColor: remaining >= 0 ? Colors.green[800] : Colors.red[800],
+            const SizedBox(height: 30),
+            Card(
+              elevation: 2,
+              color: Colors.grey[50],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.budget.categoryName ?? 'Budget',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Chip(
+                      label: Text(_isActive ? 'Actif' : 'Inactif'),
+                      backgroundColor: _isActive ? Colors.green[100] : Colors.grey[200],
+                      labelStyle: TextStyle(color: _isActive ? Colors.green[800] : Colors.grey[800], fontWeight: FontWeight.bold),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      side: BorderSide.none,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} €', context),
+                    const Divider(height: 30),
+                    _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} €', context, valueColor: Colors.orange[800]),
+                    const Divider(height: 30),
+                    _buildDetailRow(
+                      remaining >= 0 ? 'Montant restant:' : 'Dépassement:',
+                      '${remaining.abs().toStringAsFixed(2)} €',
+                      context,
+                      valueColor: remaining >= 0 ? Colors.green[800] : Colors.red[800],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

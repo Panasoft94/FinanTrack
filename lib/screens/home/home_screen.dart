@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           children: const [
             Icon(Icons.monetization_on),
             SizedBox(width: 8),
-            Text('Finan Track'),
+            Text('FinanTrack'),
           ],
         ),
         bottom: TabBar(

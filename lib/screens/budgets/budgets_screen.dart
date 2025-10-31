@@ -201,7 +201,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Opacity(
-            opacity: isActive ? 1.0 : 0.5, // Grise le budget si inactif
+            opacity: isActive ? 1.0 : 0.5,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -209,13 +209,19 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                   children: [
                     CircleAvatar(backgroundColor: budget.categoryColor?.withOpacity(0.2), child: Icon(budget.categoryIcon, color: budget.categoryColor)),
                     const SizedBox(width: 12),
-                    Expanded(child: Text(budget.categoryName ?? budget.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-                    Text('${budget.spentAmount.toStringAsFixed(2)} / ${budget.amount.toStringAsFixed(2)} €', style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Expanded(child: Text(budget.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: Colors.grey),
                       onPressed: () => _showAddOrEditBudgetSheet(budget: budget),
                       splashRadius: 20,
                     ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Row(
+                  children: [
+                    const Spacer(),
+                    Text('${budget.spentAmount.toStringAsFixed(2)} / ${budget.amount.toStringAsFixed(2)} FCFA', style: const TextStyle(fontWeight: FontWeight.w500)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -224,8 +230,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Restant: ${remaining.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, color: remaining >= 0 ? Colors.black54 : Colors.red)),
-                    Text(isActive ? (daysLeft > 0 ? '$daysLeft jours restants' : 'Terminé') : 'Inactif', style: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic)),
+                    Text('Restant: ${remaining.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: remaining >= 0 ? Colors.black54 : Colors.red)),
+                    if (isActive)
+                      Text(daysLeft > 0 ? '$daysLeft jours restants' : 'Terminé', style: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic)),
                   ],
                 ),
               ],
