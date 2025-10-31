@@ -2,6 +2,7 @@ import 'package:budget/screens/config/base_config_screen.dart';
 import 'package:budget/screens/database/reset_database_screen.dart';
 import 'package:budget/screens/database/restore_database_screen.dart';
 import 'package:budget/screens/database/save_database_screen.dart';
+import 'package:budget/screens/devises/devises_screen.dart';
 import 'package:budget/screens/expense_category/expense_category_screen.dart';
 import 'package:budget/screens/user_account/user_account_screen.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,15 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          _buildDashboardTile(
+            context,
+            icon: Icons.currency_exchange,
+            title: 'Devises',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const DevisesScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
           _buildDashboardTile(
             context,
             icon: Icons.category,

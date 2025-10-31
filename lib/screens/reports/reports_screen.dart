@@ -1,5 +1,8 @@
+import 'package:budget/screens/database/db_helper.dart';
+import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:intl/intl.dart';
+import 'package:pie_chart/pie_chart.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -9,79 +12,74 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  bool _isDownloading = false;
-  String _downloadMessage = '';
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+  Future<List<TransactionWithDetails>>? _reportFuture;
 
-  Future<void> _performDownload(String format) async {
+  @override
+  void initState() {
+    super.initState();
+    _loadReportData();
+  }
+
+  void _loadReportData() {
     setState(() {
-      _isDownloading = true;
-      _downloadMessage = 'Préparation de votre rapport $format...';
+      _reportFuture = DbHelper.getTransactionsWithDetailsInRange(
+        _startDate.toIso8601String(),
+        _endDate.toIso8601String(),
+      ).then((maps) => maps.map((map) => TransactionWithDetails.fromMap(map)).toList());
     });
+  }
 
-    // Simule une opération de téléchargement
-    await Future.delayed(const Duration(seconds: 3));
-
-    setState(() {
-      _isDownloading = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Rapport $format téléchargé avec succès !'),
-          backgroundColor: Colors.green[700],
-        ),
-      );
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStartDate ? _startDate : _endDate,
+      firstDate: DateTime(2020), 
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = picked;
+        } else {
+          // Correction: S'assure d'inclure toute la journée de fin
+          _endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+        }
+        _loadReportData();
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.assessment), SizedBox(width: 8), Text('Rapports')]),
+        centerTitle: true,
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- Section Filtres ---
             _buildFilterSection(context),
             const SizedBox(height: 20),
-            
-            // --- Section Aperçu ---
             Expanded(
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 2,
-                child: _isDownloading
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 20),
-                            Text(_downloadMessage),
-                          ],
-                        ),
-                      )
-                    : Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                             Icon(Icons.bar_chart_rounded, size: 80, color: Colors.grey[400]),
-                             const SizedBox(height: 20),
-                             Text(
-                              'Aperçu du rapport',
-                              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                      ),
+              child: FutureBuilder<List<TransactionWithDetails>>(
+                future: _reportFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text("Aucune transaction pour cette période."));
+                  }
+                  return _buildReportContent(snapshot.data!);
+                },
               ),
             ),
-            const SizedBox(height: 20),
-            
-            // --- Section Actions ---
-            _buildActionButtons(),
           ],
         ),
       ),
@@ -90,61 +88,84 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildFilterSection(BuildContext context) {
     return Card(
-      elevation: 0,
-      color: Colors.grey[100],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Text('Période:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700])),
-            TextButton.icon(
-              onPressed: () { /* Logique pour choisir la date de début */ },
-              icon: const Icon(Icons.calendar_today_outlined, size: 18),
-              label: const Text('Date de début'),
-            ),
-            TextButton.icon(
-              onPressed: () { /* Logique pour choisir la date de fin */ },
-              icon: const Icon(Icons.calendar_today, size: 18),
-              label: const Text('Date de fin'),
-            ),
+            _buildDateSelector('Du', _startDate, () => _selectDate(context, true)),
+            const Icon(Icons.arrow_forward, color: Colors.grey),
+            _buildDateSelector('Au', _endDate, () => _selectDate(context, false)),
           ],
         ),
       ),
     );
   }
-  
-  Widget _buildActionButtons() {
-    return Row(
+
+  Widget _buildDateSelector(String label, DateTime date, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(children: [Text(label, style: const TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(DateFormat('d MMM yyyy', 'fr_FR').format(date))]),
+    );
+  }
+
+  Widget _buildReportContent(List<TransactionWithDetails> transactions) {
+    final double totalIncome = transactions.where((t) => t.type == 'income').fold(0.0, (sum, item) => sum + item.amount);
+    final double totalExpense = transactions.where((t) => t.type == 'expense').fold(0.0, (sum, item) => sum + item.amount);
+    final double netResult = totalIncome - totalExpense;
+
+    final Map<String, double> expenseByCategory = {};
+    for (var t in transactions.where((t) => t.type == 'expense')) {
+      final categoryName = t.categoryName ?? 'Non classé';
+      expenseByCategory[categoryName] = (expenseByCategory[categoryName] ?? 0) + t.amount;
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildSummaryCard(totalIncome, totalExpense, netResult),
+          const SizedBox(height: 20),
+          if (expenseByCategory.isNotEmpty)
+            PieChart(
+              dataMap: expenseByCategory,
+              animationDuration: const Duration(milliseconds: 800),
+              chartLegendSpacing: 32,
+              chartRadius: MediaQuery.of(context).size.width / 3.2,
+              initialAngleInDegree: 0,
+              chartType: ChartType.ring,
+              ringStrokeWidth: 32,
+              legendOptions: const LegendOptions(showLegendsInRow: true, legendPosition: LegendPosition.bottom, showLegends: true, legendTextStyle: TextStyle(fontWeight: FontWeight.bold)),
+              chartValuesOptions: const ChartValuesOptions(showChartValueBackground: true, showChartValues: true, showChartValuesInPercentage: true, decimalPlaces: 1),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(double income, double expense, double net) {
+    return Card(
+      color: Colors.grey[100],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildSummaryColumn('Total Revenus', income, Colors.green[700]!),
+            _buildSummaryColumn('Total Dépenses', expense, Colors.red[700]!),
+            _buildSummaryColumn('Solde Net', net, net >= 0 ? Colors.blue[800]! : Colors.red[700]!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryColumn(String title, double amount, Color color) {
+    return Column(
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('PDF'),
-            onPressed: _isDownloading ? null : () => _performDownload('PDF'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              backgroundColor: Colors.red[700],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.grid_on_outlined),
-            label: const Text('Excel'),
-            onPressed: _isDownloading ? null : () => _performDownload('Excel'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              backgroundColor: Colors.green[700],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ),
+        Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[800])),
+        const SizedBox(height: 5),
+        Text('${amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
       ],
     );
   }

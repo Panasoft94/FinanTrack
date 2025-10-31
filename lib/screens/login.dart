@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         centerTitle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(6)),
         ),
       ),
       body: SafeArea(

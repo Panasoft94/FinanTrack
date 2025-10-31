@@ -54,8 +54,8 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
       });
     }
 
-    final db = await DbHelper.getdb();
-    //await DbHelper.logTables(db); // Pour debug
+    await DbHelper.getdb(); // Assure la création de la DB
+    await DbHelper.insertDefaultConfig(); // Insère la config par défaut
 
     if (mounted && progress == 1.0) {
       _buttonController.forward();
@@ -128,7 +128,7 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
 
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => const OnboardingScreen()), // Changement ici
+                        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
                             (route) => false,
                       );
                     },
