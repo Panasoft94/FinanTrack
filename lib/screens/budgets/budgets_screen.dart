@@ -32,7 +32,28 @@ class BudgetWithDetails {
     this.spentAmount = 0.0,
   });
 
+  // Helper list to solve tree-shaking issue
+  static final List<IconData> _availableIcons = [
+    Icons.shopping_cart, Icons.fastfood, Icons.directions_car, Icons.movie,
+    Icons.house, Icons.work, Icons.savings, Icons.receipt_long,
+    Icons.medical_services, Icons.school, Icons.local_gas_station, Icons.phone_android,
+    Icons.train, Icons.lightbulb_outline, Icons.pets, Icons.book,
+  ];
+
+  static IconData _iconFromString(String iconString) {
+    try {
+      int codePoint = int.parse(iconString);
+      return _availableIcons.firstWhere(
+        (icon) => icon.codePoint == codePoint,
+        orElse: () => Icons.error_outline,
+      );
+    } catch (e) {
+      return Icons.error_outline;
+    }
+  }
+
   factory BudgetWithDetails.fromMap(Map<String, dynamic> map) {
+    final iconString = map[DbHelper.CATEGORY_ICON]?.toString();
     return BudgetWithDetails(
       id: map[DbHelper.BUDGET_ID],
       name: map[DbHelper.BUDGET_NAME] ?? 'Budget sans nom',
@@ -43,7 +64,7 @@ class BudgetWithDetails {
       status: map[DbHelper.BUDGET_STATUS] ?? 1,
       categoryName: map[DbHelper.CATEGORY_NAME],
       spentAmount: (map['spent_amount'] ?? 0.0).toDouble(),
-      categoryIcon: map[DbHelper.CATEGORY_ICON] != null ? IconData(int.parse(map[DbHelper.CATEGORY_ICON]), fontFamily: 'MaterialIcons') : null,
+      categoryIcon: iconString != null ? _iconFromString(iconString) : null,
       categoryColor: map[DbHelper.CATEGORY_COLOR] != null ? Color(int.parse(map[DbHelper.CATEGORY_COLOR])) : null,
     );
   }

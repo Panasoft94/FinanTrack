@@ -17,23 +17,50 @@ class Category {
     required this.color,
   });
 
-  // Gérer la conversion IconData <-> String
+  // Listes centralisées pour la consistance et pour résoudre l'erreur de tree-shaking
+  static final List<IconData> availableIcons = [
+    Icons.shopping_cart, Icons.fastfood, Icons.directions_car, Icons.movie,
+    Icons.house, Icons.work, Icons.savings, Icons.receipt_long,
+    Icons.medical_services, Icons.school, Icons.local_gas_station, Icons.phone_android,
+    Icons.train, Icons.lightbulb_outline, Icons.pets, Icons.book,
+  ];
+
+  static final List<Color> availableColors = [
+    Colors.red, Colors.blue, Colors.green, Colors.orange, Colors.purple,
+    Colors.teal, Colors.pink, Colors.amber, Colors.indigo, Colors.cyan,
+  ];
+
+  // Trouve l'icône dans la liste au lieu de créer une nouvelle instance non-constante.
   static IconData _iconFromString(String iconString) {
-    return IconData(int.parse(iconString), fontFamily: 'MaterialIcons');
+    try {
+      int codePoint = int.parse(iconString);
+      return availableIcons.firstWhere(
+        (icon) => icon.codePoint == codePoint,
+        orElse: () => Icons.error_outline, // Icône de secours
+      );
+    } catch (e) {
+      return Icons.error_outline; // Gère le cas où la conversion échoue
+    }
   }
 
-  // Gérer la conversion Color <-> String
   static Color _colorFromString(String colorString) {
-    return Color(int.parse(colorString));
+    try {
+      return Color(int.parse(colorString));
+    } catch (e) {
+      return Colors.grey; // Couleur de secours
+    }
   }
 
   factory Category.fromMap(Map<String, dynamic> map) {
+    final iconString = map['icon']?.toString();
+    final colorString = map['color']?.toString();
+
     return Category(
       id: map['id'],
-      name: map['name'],
-      type: map['type'],
-      icon: _iconFromString(map['icon']),
-      color: _colorFromString(map['color']),
+      name: map['name'] ?? 'Sans nom',
+      type: map['type'] ?? 'expense',
+      icon: iconString != null ? _iconFromString(iconString) : Icons.error_outline,
+      color: colorString != null ? _colorFromString(colorString) : Colors.grey,
     );
   }
 
@@ -63,7 +90,6 @@ class _ExpenseCategoryScreenState extends State<ExpenseCategoryScreen> with Sing
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // Rafraîchit l'UI (notamment le tooltip du FAB) quand l'onglet change
     _tabController.addListener(() => setState(() {}));
   }
 
@@ -73,7 +99,6 @@ class _ExpenseCategoryScreenState extends State<ExpenseCategoryScreen> with Sing
     super.dispose();
   }
 
-  // Ouvre le panneau pour ajouter ou modifier une catégorie
   void _showAddOrEditCategorySheet({Category? category}) {
     showModalBottomSheet(
       context: context,
@@ -86,7 +111,7 @@ class _ExpenseCategoryScreenState extends State<ExpenseCategoryScreen> with Sing
           final isEditing = cat.id != null;
           (isEditing ? DbHelper.updateCategory(cat.toMap()) : DbHelper.insertCategory(cat.toMap()))
               .then((_) {
-                setState(() {}); // Rafraîchit la liste
+                setState(() {});
                 Navigator.of(context).pop();
           });
         },
@@ -154,7 +179,7 @@ class _CategoryList extends StatelessWidget {
           TextButton(
             onPressed: () {
               DbHelper.deleteCategory(category.id!).then((_) {
-                onUpdate(); // Rafraîchit l'UI de l'écran principal
+                onUpdate();
                 Navigator.of(context).pop();
               });
             },
@@ -225,8 +250,8 @@ class __AddOrEditCategoryFormState extends State<_AddOrEditCategoryForm> {
   late IconData _selectedIcon;
   late Color _selectedColor;
 
-  final List<IconData> _icons = [ Icons.shopping_cart, Icons.fastfood, Icons.directions_car, Icons.movie, Icons.house, Icons.work, Icons.savings, Icons.receipt_long, Icons.medical_services, Icons.school, ];
-  final List<Color> _colors = [ Colors.red, Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.teal, Colors.pink, Colors.amber, Colors.indigo, Colors.cyan, ];
+  final List<IconData> _icons = Category.availableIcons;
+  final List<Color> _colors = Category.availableColors;
 
   @override
   void initState() {
@@ -259,7 +284,7 @@ class __AddOrEditCategoryFormState extends State<_AddOrEditCategoryForm> {
             TextField(controller: _nameController, decoration: InputDecoration(labelText: 'Nom de la catégorie', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             const SizedBox(height: 20),
             
-            if (widget.category == null) // Ne montre le sélecteur de type qu'à la création
+            if (widget.category == null)
               SegmentedButton<String>(
                 segments: const [
                   ButtonSegment(value: 'expense', label: Text('Dépense'), icon: Icon(Icons.arrow_downward)),
