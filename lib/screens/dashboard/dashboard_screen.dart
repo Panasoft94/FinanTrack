@@ -1,5 +1,6 @@
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/expense_category/expense_category_screen.dart';
+import 'package:budget/screens/guide/guide_screen.dart';
 import 'package:budget/screens/notifications/notifications_screen.dart';
 import 'package:budget/screens/settings/settings_screen.dart';
 import 'package:budget/screens/statistics/data_statistics_screen.dart';
@@ -67,6 +68,15 @@ class DashboardScreen extends StatelessWidget {
             title: 'Catégorie depense',
             onTap: () {
               Navigator.of(context).push(_slideTransition(const ExpenseCategoryScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
+            icon: Icons.help_outline,
+            title: "Guide d'utilisation",
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const GuideScreen()));
             },
           ),
         ],

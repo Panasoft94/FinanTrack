@@ -3,6 +3,9 @@ import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -14,7 +17,8 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
-  Future<List<TransactionWithDetails>>? _reportFuture;
+  List<TransactionWithDetails> _transactions = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -22,13 +26,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _loadReportData();
   }
 
-  void _loadReportData() {
+  Future<void> _loadReportData() async {
     setState(() {
-      _reportFuture = DbHelper.getTransactionsWithDetailsInRange(
-        _startDate.toIso8601String(),
-        _endDate.toIso8601String(),
-      ).then((maps) => maps.map((map) => TransactionWithDetails.fromMap(map)).toList());
+      _isLoading = true;
     });
+
+    final maps = await DbHelper.getTransactionsWithDetailsInRange(
+      _startDate.toIso8601String(),
+      _endDate.toIso8601String(),
+    );
+
+    if (mounted) {
+      setState(() {
+        _transactions = maps.map((map) => TransactionWithDetails.fromMap(map)).toList();
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
@@ -50,6 +63,67 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
+  Future<void> _exportToPdf() async {
+    final pdf = pw.Document();
+
+    final double totalIncome = _transactions.where((t) => t.type == 'income').fold(0.0, (sum, item) => sum + item.amount);
+    final double totalExpense = _transactions.where((t) => t.type == 'expense').fold(0.0, (sum, item) => sum + item.amount);
+    final double netResult = totalIncome - totalExpense;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        build: (pw.Context context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Rapport Financier', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                pw.Text(DateFormat('d MMM yyyy', 'fr_FR').format(DateTime.now())),
+              ],
+            ),
+          ),
+          pw.Text('Période du ${DateFormat('d/M/y').format(_startDate)} au ${DateFormat('d/M/y').format(_endDate)}'),
+          pw.Divider(height: 20),
+          pw.Header(level: 1, text: 'Résumé'),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildPdfSummary('Total Revenus', totalIncome, PdfColors.green),
+              _buildPdfSummary('Total Dépenses', totalExpense, PdfColors.red),
+              _buildPdfSummary('Solde Net', netResult, netResult >= 0 ? PdfColors.blue : PdfColors.red),
+            ],
+          ),
+          pw.SizedBox(height: 30),
+          pw.Header(level: 1, text: 'Détail des Transactions'),
+          pw.Table.fromTextArray(
+            headers: ['Date', 'Description', 'Catégorie', 'Compte', 'Montant'],
+            data: _transactions.map((t) => [
+              DateFormat('d/M/y').format(t.date),
+              t.description ?? 'N/A',
+              t.categoryName ?? 'N/A',
+              t.accountName ?? 'N/A',
+              '${t.type == 'expense' ? '-' : '+'}${t.amount.toStringAsFixed(2)} €',
+            ]).toList(),
+          ),
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+  }
+
+  pw.Widget _buildPdfSummary(String title, double amount, PdfColor color) {
+    return pw.Column(
+      children: [
+        pw.Text(title, style: const pw.TextStyle(fontSize: 14)),
+        pw.SizedBox(height: 5),
+        pw.Text('${amount.toStringAsFixed(2)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18, color: color)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,21 +140,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
             _buildFilterSection(context),
             const SizedBox(height: 20),
             Expanded(
-              child: FutureBuilder<List<TransactionWithDetails>>(
-                future: _reportFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text("Aucune transaction pour cette période."));
-                  }
-                  return _buildReportContent(snapshot.data!);
-                },
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _transactions.isEmpty
+                      ? const Center(child: Text("Aucune transaction pour cette période."))
+                      : _buildReportContent(_transactions),
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _transactions.isNotEmpty ? _exportToPdf : null,
+        backgroundColor: _transactions.isNotEmpty ? Colors.green : Colors.grey,
+        child: const Icon(Icons.picture_as_pdf, color: Colors.white),
+        tooltip: 'Exporter en PDF',
       ),
     );
   }
