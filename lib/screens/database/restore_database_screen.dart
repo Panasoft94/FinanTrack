@@ -1,5 +1,9 @@
+import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:path/path.dart' as p;
+import 'package:permission_handler/permission_handler.dart';
 
 class RestoreDatabaseScreen extends StatefulWidget {
   const RestoreDatabaseScreen({super.key});
@@ -10,23 +14,39 @@ class RestoreDatabaseScreen extends StatefulWidget {
 
 class _RestoreDatabaseScreenState extends State<RestoreDatabaseScreen> {
   bool _isRestoring = false;
-  String? _selectedBackup;
-  // Simule une liste de sauvegardes disponibles
-  final List<String> _availableBackups = [
-    'Sauvegarde du 2023-10-27',
-    'Sauvegarde du 2023-10-20',
-    'Sauvegarde du 2023-10-15',
-  ];
+  String? _selectedBackupPath;
+  late Future<List<File>> _backupsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _backupsFuture = _findBackups();
+  }
+
+  Future<List<File>> _findBackups() async {
+    var status = await Permission.manageExternalStorage.status;
+    if (!status.isGranted) {
+      status = await Permission.manageExternalStorage.request();
+    }
+
+    if (status.isGranted) {
+      final backupDir = Directory("/storage/emulated/0/Download/FinanTrackBackups");
+      if (await backupDir.exists()) {
+        return backupDir.listSync().whereType<File>().where((file) => file.path.endsWith('.db')).toList();
+      }
+    }
+    return [];
+  }
 
   Future<void> _performRestore() async {
-    if (_selectedBackup == null) return;
+    if (_selectedBackupPath == null) return;
 
     setState(() {
       _isRestoring = true;
     });
 
-    // Simule une opération de restauration de 3 secondes
-    await Future.delayed(const Duration(seconds: 3));
+    final dbHelper = DbHelper();
+    final success = await dbHelper.restorer(_selectedBackupPath!);
 
     setState(() {
       _isRestoring = false;
@@ -35,8 +55,8 @@ class _RestoreDatabaseScreenState extends State<RestoreDatabaseScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Restauration à partir de "$_selectedBackup" réussie !'),
-          backgroundColor: Colors.green[700],
+          content: Text(success ? 'Restauration réussie ! Veuillez redémarrer l\'application.' : 'Échec de la restauration.'),
+          backgroundColor: success ? Colors.green[700] : Colors.red[700],
         ),
       );
     }
@@ -78,28 +98,43 @@ class _RestoreDatabaseScreenState extends State<RestoreDatabaseScreen> {
             ),
             const SizedBox(height: 15),
             Text(
-              'Choisissez une sauvegarde pour restaurer vos données à un état antérieur. Attention, les données actuelles non sauvegardées seront perdues.',
+              'Choisissez une sauvegarde pour restaurer vos données. Attention, les données actuelles non sauvegardées seront perdues.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 40),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Choisir une sauvegarde',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.archive_outlined),
-              ),
-              value: _selectedBackup,
-              items: _availableBackups.map((String backup) {
-                return DropdownMenuItem<String>(
-                  value: backup,
-                  child: Text(backup),
+            FutureBuilder<List<File>>(
+              future: _backupsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text("Aucune sauvegarde trouvée."));
+                }
+                return DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Choisir une sauvegarde',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.archive_outlined),
+                  ),
+                  value: _selectedBackupPath,
+                  items: snapshot.data!.map((file) {
+                    return DropdownMenuItem<String>(
+                      value: file.path,
+                      child: Text(
+                        p.basename(file.path),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedBackupPath = newValue;
+                    });
+                  },
                 );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedBackup = newValue;
-                });
               },
             ),
             const SizedBox(height: 30),
@@ -117,7 +152,7 @@ class _RestoreDatabaseScreenState extends State<RestoreDatabaseScreen> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.restore_page_rounded),
                 label: const Text('Lancer la restauration'),
-                onPressed: _selectedBackup == null ? null : _performRestore, // Désactivé si aucune sauvegarde n'est choisie
+                onPressed: _selectedBackupPath == null ? null : _performRestore,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,

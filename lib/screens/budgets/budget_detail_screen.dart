@@ -1,5 +1,6 @@
 import 'package:budget/screens/budgets/budgets_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
+import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
 
 class BudgetDetailScreen extends StatefulWidget {
@@ -20,17 +21,17 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
     _isActive = widget.budget.status == 1;
   }
 
-  void _toggleStatus() {
+  void _toggleStatus(bool newValue) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
         title: Row(children: [
-          Icon(_isActive ? Icons.warning_amber_rounded : Icons.check_circle_outline, color: _isActive ? Colors.red : Colors.green),
+          Icon(newValue ? Icons.check_circle_outline : Icons.warning_amber_rounded, color: newValue ? Colors.green : Colors.red),
           const SizedBox(width: 10),
-          Expanded(child: Text(_isActive ? 'Désactiver le budget' : 'Activer le budget'))
+          Expanded(child: Text(newValue ? 'Activer le budget' : 'Désactiver le budget'))
         ]),
-        content: Text('Voulez-vous vraiment ${_isActive ? "désactiver" : "activer"} ce budget ?'),
+        content: Text('Voulez-vous vraiment ${newValue ? "activer" : "désactiver"} ce budget ?'),
         actionsAlignment: MainAxisAlignment.spaceAround,
         actions: [
           OutlinedButton(
@@ -39,9 +40,11 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
             style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[800], side: BorderSide(color: Colors.grey[400]!), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
           ),
           ElevatedButton(
-            child: Text(_isActive ? 'Désactiver' : 'Activer'),
+            child: Text(newValue ? 'Activer' : 'Désactiver'),
             onPressed: () async {
-              setState(() => _isActive = !_isActive);
+              setState(() {
+                _isActive = newValue;
+              });
               widget.budget.status = _isActive ? 1 : 0;
               await DbHelper.updateBudget(widget.budget.toMap());
               if (mounted) {
@@ -55,7 +58,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: _isActive ? Colors.red : Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            style: ElevatedButton.styleFrom(backgroundColor: newValue ? Colors.green : Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
           ),
         ],
       ),
@@ -76,91 +79,108 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 200,
-              width: 200,
-              child: Stack(
-                fit: StackFit.expand,
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
                 children: [
-                  CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 15,
-                    backgroundColor: Colors.grey[300],
-                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 200,
+                    width: 200,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 15,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                        ),
+                        Center(
+                          child: Text(
+                            '${(progress * 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Center(
-                    child: Text(
-                      '${(progress * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 30),
+                  Card(
+                    elevation: 2,
+                    color: Colors.grey[50],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.budget.categoryName ?? 'Budget',
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Switch(
+                            value: _isActive,
+                            onChanged: _toggleStatus,
+                            activeTrackColor: Colors.green.shade200,
+                            activeColor: Colors.green,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} €', context),
+                          const Divider(height: 30),
+                          _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} €', context, valueColor: Colors.orange[800]),
+                          const Divider(height: 30),
+                          _buildDetailRow(
+                            remaining >= 0 ? 'Montant restant:' : 'Dépassement:',
+                            '${remaining.abs().toStringAsFixed(2)} €',
+                            context,
+                            valueColor: remaining >= 0 ? Colors.green[800] : Colors.red[800],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
-            Card(
-              elevation: 2,
-              color: Colors.grey[50],
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.budget.categoryName ?? 'Budget',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Chip(
-                      label: Text(_isActive ? 'Actif' : 'Inactif'),
-                      backgroundColor: _isActive ? Colors.green[100] : Colors.grey[200],
-                      labelStyle: TextStyle(color: _isActive ? Colors.green[800] : Colors.grey[800], fontWeight: FontWeight.bold),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      side: BorderSide.none,
-                    ),
-                  ],
-                ),
-              ),
+            const Divider(height: 30),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0),
+              child: Text("Transactions de ce budget", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54)),
             ),
-            const SizedBox(height: 30),
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} €', context),
-                    const Divider(height: 30),
-                    _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} €', context, valueColor: Colors.orange[800]),
-                    const Divider(height: 30),
-                    _buildDetailRow(
-                      remaining >= 0 ? 'Montant restant:' : 'Dépassement:',
-                      '${remaining.abs().toStringAsFixed(2)} €',
-                      context,
-                      valueColor: remaining >= 0 ? Colors.green[800] : Colors.red[800],
-                    ),
-                  ],
-                ),
-              ),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: DbHelper.getTransactionsForBudget(widget.budget.categoryId!, widget.budget.startDate.toIso8601String(), widget.budget.endDate.toIso8601String()),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text("Aucune transaction pour ce budget.")));
+                }
+                final transactions = snapshot.data!.map((map) => TransactionWithDetails.fromMap(map)).toList();
+                return _buildTransactionList(transactions);
+              },
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _toggleStatus,
-        label: Text(_isActive ? 'Désactiver' : 'Activer'),
-        icon: Icon(_isActive ? Icons.toggle_off_outlined : Icons.toggle_on_outlined),
-        backgroundColor: _isActive ? Colors.red[700] : Colors.green[700],
-        foregroundColor: Colors.white,
       ),
     );
   }
@@ -179,6 +199,35 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTransactionList(List<TransactionWithDetails> transactions) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: transactions.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        final transaction = transactions[index];
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: transaction.categoryColor?.withOpacity(0.2),
+              child: Icon(transaction.categoryIcon, color: transaction.categoryColor, size: 24),
+            ),
+            title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
+            trailing: Text(
+              '- ${transaction.amount.toStringAsFixed(2)} €',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red[700]),
+            ),
+          ),
+        );
+      },
     );
   }
 }

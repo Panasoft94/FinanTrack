@@ -58,6 +58,26 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
+  bool _isSearching = false;
+  String _searchQuery = "";
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _showAddOrEditTransactionSheet({TransactionWithDetails? transaction}) {
     showModalBottomSheet(
       context: context,
@@ -119,15 +139,58 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+  AppBar _buildAppBar() {
+    if (_isSearching) {
+      return AppBar(
+        leading: const Icon(Icons.search, color: Colors.white),
+        title: TextField(
+          controller: _searchController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Rechercher...',
+            hintStyle: TextStyle(color: Colors.white70),
+            border: InputBorder.none,
+          ),
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              _searchController.clear();
+              setState(() {
+                _isSearching = false;
+              });
+            },
+          ),
+        ],
+      );
+    } else {
+      return AppBar(
         title: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.swap_horiz), SizedBox(width: 8), Text('Transactions')]),
         centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
-      ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = true;
+              });
+            },
+          ),
+        ],
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildAppBar(),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: DbHelper.getTransactionsWithDetails(),
         builder: (context, snapshot) {
@@ -137,6 +200,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           if (snapshot.hasError) {
             return Center(child: Text("Erreur: ${snapshot.error}"));
           }
+
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
               child: Column(
@@ -158,11 +222,41 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             );
           }
 
-          final transactions = snapshot.data!.map((map) => TransactionWithDetails.fromMap(map)).toList();
+          final allTransactions = snapshot.data!.map((map) => TransactionWithDetails.fromMap(map)).toList();
+
+          final filteredTransactions = allTransactions.where((t) {
+            final query = _searchQuery.toLowerCase();
+            if (query.isEmpty) return true;
+            return (t.description?.toLowerCase().contains(query) ?? false) ||
+                   (t.categoryName?.toLowerCase().contains(query) ?? false) ||
+                   (t.accountName?.toLowerCase().contains(query) ?? false);
+          }).toList();
+
+          if (filteredTransactions.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(_searchQuery.isEmpty ? Icons.receipt_long_outlined : Icons.search_off, size: 100, color: Colors.grey[300]),
+                  const SizedBox(height: 20),
+                  Text(
+                    _searchQuery.isEmpty ? "Aucune transaction" : "Aucun résultat",
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _searchQuery.isEmpty ? "Appuyez sur le bouton + pour commencer." : "Aucune transaction ne correspond à '$_searchQuery'.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
+          }
           
           // Grouper les transactions par jour
           final Map<DateTime, List<TransactionWithDetails>> groupedTransactions = {};
-          for (var t in transactions) {
+          for (var t in filteredTransactions) {
             final dateKey = DateTime(t.date.year, t.date.month, t.date.day);
             if (groupedTransactions[dateKey] == null) {
               groupedTransactions[dateKey] = [];
@@ -228,7 +322,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       children: [
         Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
-        Text('${amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
+        Text('${amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
       ],
     );
   }
@@ -250,7 +344,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         leading: CircleAvatar(backgroundColor: categoryColor.withOpacity(0.2), child: Icon(icon, color: categoryColor, size: 24)),
         title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
-        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
       ),
     );
   }
@@ -375,6 +469,7 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
                   items: snapshot.hasData ? snapshot.data!.map((acc) => DropdownMenuItem(value: acc.id, child: Text(acc.name))).toList() : [],
                   onChanged: (val) => setState(() => _selectedAccountId = val),
                   decoration: InputDecoration(labelText: 'Compte', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                  validator: (val) => val == null ? 'Veuillez sélectionner un compte.' : null,
                 ),
               ),
               const SizedBox(height: 15),
@@ -385,6 +480,7 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
                   items: snapshot.hasData ? snapshot.data!.map((cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name))).toList() : [],
                   onChanged: (val) => setState(() => _selectedCategoryId = val),
                   decoration: InputDecoration(labelText: 'Catégorie', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                  validator: (val) => val == null ? 'Veuillez sélectionner une catégorie.' : null,
                 ),
               ),
                const SizedBox(height: 15),

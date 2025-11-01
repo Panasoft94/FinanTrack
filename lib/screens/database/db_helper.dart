@@ -4,6 +4,7 @@ import 'package:budget/screens/config/base_config_screen.dart';
 import 'package:budget/screens/devises/devises_screen.dart';
 import 'package:budget/screens/expense_category/expense_category_screen.dart';
 import 'package:budget/screens/user_account/user_account_screen.dart';
+import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -158,54 +159,73 @@ class DbHelper{
     final data = {'acept_licence':acept_licence};
     return await dbClient!.update(USERS_TABLE, data,where: '$USER_ID = ?',whereArgs: [user_id]);
   }
-  //sauvegarde de la base de données
-  backUp() async{
+
+//sauvegarde de la base de données
+  Future<String?> backUp() async {
     var status = await Permission.manageExternalStorage.status;
-    if(!status.isGranted){
-      await Permission.manageExternalStorage.request();
-    }
-    var status1 = await Permission.storage.status;
-    if(!status1.isGranted){
-      await Permission.storage.request();
-    }
-    try{
-      File ourDBFile = File('/data/user/0/com.example.budget/databases/finantrack.db');
-      Directory? folderPathForDBFILE = Directory("/storage/emulated/0/Download/finantrackDatabase/");
-      await folderPathForDBFILE.create();
-      //suppression du fichier existant
-      File ourDBFile2 = File("/storage/emulated/0/Download/finantrackDatabase/finantrack.db");
-      // Check if the file exists before attempting to delete
-      if (await ourDBFile2.exists()) {
-        await ourDBFile2.delete();
+    if (!status.isGranted) {
+      status = await Permission.manageExternalStorage.request();
+      if (!status.isGranted) {
+        print("Storage permission was not granted.");
+        return null;
       }
-      //copie du fichier
-      await ourDBFile.copy("/storage/emulated/0/Download/finantrackDatabase/tontine.db");
-    } 
-    catch (e){
-      print(e);
+    }
+    try {
+      final dbPath = await getDatabasesPath();
+      final sourceFile = File(join(dbPath, 'finantrack.db'));
+
+      if (!await sourceFile.exists()) {
+        print("Source DB file not found.");
+        return null;
+      }
+      
+      final backupDir = Directory("/storage/emulated/0/Download/FinanTrackBackups");
+
+      if (!await backupDir.exists()) {
+        await backupDir.create(recursive: true);
+      }
+      
+      final backupFilePath = join(backupDir.path, "finantrack-backup-${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.db");
+
+      final backedUpFile = await sourceFile.copy(backupFilePath);
+      print("Database backed up to: ${backedUpFile.path}");
+      return backedUpFile.path;
+
+    } catch (e) {
+      print("Error during backup: $e");
+      return null;
     }
   }
+
 //restauration de la base de données
-  restorer() async{
+  Future<bool> restorer(String backupFilePath) async{
     var status = await Permission.manageExternalStorage.status;
-    if(!status.isGranted){
-      await Permission.manageExternalStorage.request();
-    }
-    var status1 = await Permission.storage.status;
-    if(!status1.isGranted){
-      await Permission.storage.request();
+    if (!status.isGranted) {
+      status = await Permission.manageExternalStorage.request();
+      if (!status.isGranted) {
+         print("Storage permission was not granted.");
+        return false;
+      }
     }
     try{
-      File savedDBFile = File("/storage/emulated/0/Download/finantrackDatabase/finantrack.db");
-      // Check if the source file exists before attempting to copy
-      if (await savedDBFile.exists()) {
-        await savedDBFile.copy('/data/user/0/com.example.budget/databases/tontine.db');
+      final dbPath = await getDatabasesPath();
+      final dbFile = File(join(dbPath, 'finantrack.db'));
+      final backupFile = File(backupFilePath);
+
+      if (await backupFile.exists()) {
+        await _db?.close(); // Close the database before copying
+        await backupFile.copy(dbFile.path);
+        _db = await _initDb(); // Re-initialize the database connection
+        print("Database restored successfully from: $backupFilePath");
+        return true;
       } else {
-        print("Source DB file for restore not found: ${savedDBFile.path}");
+        print("Source DB file for restore not found: ${backupFile.path}");
+        return false;
       }
     }
     catch (e){
-      print(e);
+      print("Error during restore: $e");
+      return false;
     }
   }
 
@@ -421,6 +441,26 @@ class DbHelper{
       ORDER BY t.$TRANSACTION_DATE DESC
     ''';
     return await dbClient!.rawQuery(query, [accountId]);
+  }
+
+  static Future<List<Map<String, dynamic>>> getTransactionsForBudget(int categoryId, String startDate, String endDate) async {
+    final dbClient = await getdb();
+    final String query = '''
+      SELECT 
+        t.*,
+        a.$ACCOUNT_NAME,
+        c.$CATEGORY_NAME,
+        c.$CATEGORY_ICON,
+        c.$CATEGORY_COLOR
+      FROM $TRANSACTION_TABLE t
+      LEFT JOIN $ACCOUNTS_TABLE a ON t.$ACCOUNT_ID = a.$ACCOUNT_ID
+      LEFT JOIN $CATEGORIES_TABLE c ON t.$CATEGORY_ID = c.$CATEGORY_ID
+      WHERE t.$CATEGORY_ID = ?
+        AND t.$TRANSACTION_TYPE = 'expense'
+        AND t.$TRANSACTION_DATE BETWEEN ? AND ?
+      ORDER BY t.$TRANSACTION_DATE DESC
+    ''';
+    return await dbClient!.rawQuery(query, [categoryId, startDate, endDate]);
   }
 
   static Future<int> updateTransaction(Map<String, dynamic> data) async {

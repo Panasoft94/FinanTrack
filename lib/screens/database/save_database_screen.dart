@@ -1,3 +1,4 @@
+import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -10,29 +11,32 @@ class SaveDatabaseScreen extends StatefulWidget {
 
 class _SaveDatabaseScreenState extends State<SaveDatabaseScreen> {
   bool _isSaving = false;
-  String _lastBackupInfo = "Jamais sauvegardé"; // Valeur par défaut
+  String? _backupPath;
 
   Future<void> _performSave() async {
     setState(() {
       _isSaving = true;
+      _backupPath = null;
     });
 
-    // Simule une opération de sauvegarde de 3 secondes
-    await Future.delayed(const Duration(seconds: 3));
+    final dbHelper = DbHelper();
+    final path = await dbHelper.backUp();
 
-    // Met à jour l'état après la sauvegarde
     setState(() {
       _isSaving = false;
-      // Dans une vraie application, vous stockeriez et liriez cette date
-      _lastBackupInfo = "Dernière sauvegarde : Aujourd\'hui"; 
+      _backupPath = path;
     });
     
-    // Affiche un message de succès
     if (mounted) {
+      final message = path != null 
+          ? 'Sauvegarde réussie !'
+          : 'Échec de la sauvegarde. Vérifiez les permissions.';
+      final color = path != null ? Colors.green[700] : Colors.red[700];
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Sauvegarde de la base de données réussie !'),
-          backgroundColor: Colors.green[700],
+          content: Text(message),
+          backgroundColor: color,
         ),
       );
     }
@@ -74,7 +78,7 @@ class _SaveDatabaseScreenState extends State<SaveDatabaseScreen> {
             ),
             const SizedBox(height: 15),
             Text(
-              'Protégez vos données en créant une copie de sauvegarde. Vous pourrez la restaurer à tout moment.',
+              'Protégez vos données en créant une copie de sauvegarde dans votre dossier de téléchargements.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
@@ -106,11 +110,12 @@ class _SaveDatabaseScreenState extends State<SaveDatabaseScreen> {
               ),
             const Spacer(),
             const Spacer(),
-            Text(
-              _lastBackupInfo,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            ),
+            if (_backupPath != null)
+              Text(
+                'Sauvegarde disponible dans: \n$_backupPath',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
           ],
         ),
       ),
