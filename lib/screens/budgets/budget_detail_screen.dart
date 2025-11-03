@@ -1,7 +1,9 @@
+import 'package:budget/models/transactions_model.dart';
 import 'package:budget/screens/budgets/budgets_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class BudgetDetailScreen extends StatefulWidget {
   final BudgetWithDetails budget;
@@ -72,6 +74,12 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
     Color progressColor = progress > 0.8 ? Colors.red : Colors.green;
     if (progress > 1) progressColor = Colors.orange;
 
+    final duration = widget.budget.endDate.difference(widget.budget.startDate).inDays;
+    final remainingDays = widget.budget.endDate.difference(DateTime.now()).inDays;
+    final formattedStartDate = DateFormat('dd/MM/yyyy').format(widget.budget.startDate);
+    final formattedEndDate = DateFormat('dd/MM/yyyy').format(widget.budget.endDate);
+    final daysLeft = (remainingDays >= 0) ? remainingDays : 0;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.budget.name),
@@ -114,23 +122,56 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                     color: Colors.grey[50],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              widget.budget.categoryName ?? 'Budget',
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
+                          RichText(
+                            text: TextSpan(
+                              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+                              children: [
+                                const TextSpan(text: 'Catégorie: '),
+                                TextSpan(
+                                  text: widget.budget.categoryName ?? 'N/A',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Switch(
-                            value: _isActive,
-                            onChanged: _toggleStatus,
-                            activeTrackColor: Colors.green.shade200,
-                            activeColor: Colors.green,
+                          const SizedBox(height: 15),
+                          _buildInfoRow('Date de début:', formattedStartDate),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Date de fin:', formattedEndDate),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Durée:', '$duration jours'),
+                          const SizedBox(height: 8),
+                          _buildInfoRow('Jours restants:', daysLeft > 1 ? '$daysLeft jours' : '$daysLeft jour'),
+                          const Divider(height: 25, thickness: 1),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Statut',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _isActive ? 'Le budget est actuellement actif.' : 'Le budget est actuellement inactif.',
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: _isActive,
+                                onChanged: _toggleStatus,
+                                activeTrackColor: Colors.green.shade200,
+                                activeColor: Colors.green,
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -144,13 +185,13 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} €', context),
+                          _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} FCFA', context),
                           const Divider(height: 30),
-                          _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} €', context, valueColor: Colors.orange[800]),
+                          _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} FCFA', context, valueColor: Colors.orange[800]),
                           const Divider(height: 30),
                           _buildDetailRow(
                             remaining >= 0 ? 'Montant restant:' : 'Dépassement:',
-                            '${remaining.abs().toStringAsFixed(2)} €',
+                            '${remaining.abs().toStringAsFixed(2)} FCFA',
                             context,
                             valueColor: remaining >= 0 ? Colors.green[800] : Colors.red[800],
                           ),
@@ -182,6 +223,16 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String title, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 
@@ -222,7 +273,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
             title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
             trailing: Text(
-              '- ${transaction.amount.toStringAsFixed(2)} €',
+              '- ${transaction.amount.toStringAsFixed(2)} FCFA',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red[700]),
             ),
           ),

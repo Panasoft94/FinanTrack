@@ -16,14 +16,12 @@ fun localProperties(): Properties {
     return properties
 }
 
-// Fournir des valeurs par défaut pour éviter les erreurs de build
-val flutterVersionCode: String = localProperties().getProperty("flutter.versionCode") ?: "1"
-val flutterVersionName: String = localProperties().getProperty("flutter.versionName") ?: "1.0"
+val flutterVersionCode: String by lazy { localProperties().getProperty("flutter.versionCode") ?: "1" }
+val flutterVersionName: String by lazy { localProperties().getProperty("flutter.versionName") ?: "1.0" }
 
 android {
     namespace = "com.example.budget"
-    compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36 // Requis par les dépendances
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -43,7 +41,7 @@ android {
     defaultConfig {
         applicationId = "com.example.budget"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = 36 // Doit correspondre à compileSdk
         versionCode = flutterVersionCode.toInt()
         versionName = flutterVersionName
     }

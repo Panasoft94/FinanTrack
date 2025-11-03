@@ -1,5 +1,5 @@
+import 'package:budget/models/transactions_model.dart';
 import 'package:budget/screens/database/db_helper.dart';
-import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart';
@@ -104,7 +104,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               t.description ?? 'N/A',
               t.categoryName ?? 'N/A',
               t.accountName ?? 'N/A',
-              '${t.type == 'expense' ? '-' : '+'}${t.amount.toStringAsFixed(2)} €',
+              '${t.type == 'expense' ? '-' : '+'}${t.amount.toStringAsFixed(2)} FCFA',
             ]).toList(),
           ),
         ],

@@ -169,6 +169,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             );
           } else {
             final accounts = snapshot.data!;
+            accounts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
             return ListView.builder(
               padding: const EdgeInsets.all(16.0),
               itemCount: accounts.length,
@@ -204,24 +205,47 @@ class _AccountsScreenState extends State<AccountsScreen> {
         onLongPress: () => _showDeleteDialog(account),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(typeIcons[account.type] ?? Icons.credit_card, size: 40, color: Theme.of(context).primaryColor),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Top row for Icon, Name and Edit button
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(typeIcons[account.type] ?? Icons.credit_card, size: 32, color: Theme.of(context).primaryColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      account.name,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 22),
+                    onPressed: () => _showAddOrEditAccountSheet(account: account),
+                    color: Colors.grey[500],
+                    splashRadius: 20,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10), // Spacing
+              // Bottom row for Type and Balance
+              Padding(
+                padding: const EdgeInsets.only(left: 44.0), // Indent to align with name
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(account.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(account.type, style: TextStyle(color: Colors.grey[600])),
+                    Text(account.type, style: TextStyle(color: Colors.grey[600], fontSize: 15)),
+                    Text(
+                      '${account.balance.toStringAsFixed(2)} ${account.currencySymbol}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ),
-              Text('${account.balance.toStringAsFixed(2)} ${account.currencySymbol}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              IconButton(icon: const Icon(Icons.edit_outlined, size: 22), onPressed: () => _showAddOrEditAccountSheet(account: account), color: Colors.grey[500], splashRadius: 20, constraints: const BoxConstraints()),
             ],
           ),
         ),

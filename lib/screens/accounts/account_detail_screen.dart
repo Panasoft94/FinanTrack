@@ -1,5 +1,5 @@
+import 'package:budget/models/transactions_model.dart';
 import 'package:budget/screens/database/db_helper.dart';
-import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
 import './accounts_screen.dart'; // Importer pour la classe Account
 
@@ -34,7 +34,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
             decoration: InputDecoration(
               labelText: 'Montant à ajouter',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: Icon(Icons.euro, color: Colors.grey[600]),
+              prefixIcon: Icon(Icons.account_balance_wallet_outlined, color: Colors.grey[600]),
             ),
           ),
           actionsAlignment: MainAxisAlignment.spaceAround,
@@ -114,7 +114,19 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text("Aucune transaction pour ce compte."));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Aucune transaction pour ce compte.",
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  );
                 }
                 final transactions = snapshot.data!.map((map) => TransactionWithDetails.fromMap(map)).toList();
                 return _buildTransactionList(transactions);

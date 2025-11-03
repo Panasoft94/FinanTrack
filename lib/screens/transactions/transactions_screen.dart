@@ -1,74 +1,11 @@
+import 'package:another_flushbar/flushbar.dart';
+import 'package:budget/models/transactions_model.dart';
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:budget/screens/expense_category/expense_category_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-// --- Modèles de Données ---
-class TransactionWithDetails {
-  final int id;
-  final double amount;
-  final DateTime date;
-  final String type;
-  final String? description;
-  final int? accountId;
-  final int? categoryId;
-  final String? accountName;
-  final String? categoryName;
-  final IconData? categoryIcon;
-  final Color? categoryColor;
-
-  TransactionWithDetails({
-    required this.id,
-    required this.amount,
-    required this.date,
-    required this.type,
-    this.description,
-    this.accountId,
-    this.categoryId,
-    this.accountName,
-    this.categoryName,
-    this.categoryIcon,
-    this.categoryColor,
-  });
-
-  // Helper list to solve tree-shaking issue
-  static final List<IconData> _availableIcons = [
-    Icons.shopping_cart, Icons.fastfood, Icons.directions_car, Icons.movie,
-    Icons.house, Icons.work, Icons.savings, Icons.receipt_long,
-    Icons.medical_services, Icons.school, Icons.local_gas_station, Icons.phone_android,
-    Icons.train, Icons.lightbulb_outline, Icons.pets, Icons.book,
-  ];
-
-  static IconData _iconFromString(String iconString) {
-    try {
-      int codePoint = int.parse(iconString);
-      return _availableIcons.firstWhere(
-        (icon) => icon.codePoint == codePoint,
-        orElse: () => Icons.error_outline,
-      );
-    } catch (e) {
-      return Icons.error_outline;
-    }
-  }
-
-  factory TransactionWithDetails.fromMap(Map<String, dynamic> map) {
-    final iconString = map[DbHelper.CATEGORY_ICON]?.toString();
-    return TransactionWithDetails(
-      id: map[DbHelper.TRANSACTION_ID],
-      amount: map[DbHelper.MONTANT],
-      date: DateTime.parse(map[DbHelper.TRANSACTION_DATE]),
-      type: map[DbHelper.TRANSACTION_TYPE],
-      description: map[DbHelper.TRANSACTION_DESCRIPTION],
-      accountId: map[DbHelper.ACCOUNT_ID],
-      categoryId: map[DbHelper.CATEGORY_ID],
-      accountName: map[DbHelper.ACCOUNT_NAME],
-      categoryName: map[DbHelper.CATEGORY_NAME],
-      categoryIcon: iconString != null ? _iconFromString(iconString) : null,
-      categoryColor: map[DbHelper.CATEGORY_COLOR] != null ? Color(int.parse(map[DbHelper.CATEGORY_COLOR])) : null,
-    );
-  }
-}
 
 // --- Écran Principal ---
 class TransactionsScreen extends StatefulWidget {
@@ -146,7 +83,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 await DbHelper.updateAccount(account.toMap());
               }
 
-              await DbHelper.deleteTransaction(transaction.id);
+              await DbHelper.deleteTransaction(transaction.id!);
               if (mounted) Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: const Text('Transaction supprimée.'), backgroundColor: Colors.red[700], behavior: SnackBarBehavior.floating),
@@ -343,7 +280,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       children: [
         Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
-        Text('${amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
+        Text('${amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
       ],
     );
   }
@@ -365,7 +302,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         leading: CircleAvatar(backgroundColor: categoryColor.withOpacity(0.2), child: Icon(icon, color: categoryColor, size: 24)),
         title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
-        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
       ),
     );
   }
@@ -414,11 +351,31 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
 
   Future<void> _saveTransaction() async {
     if (!_formKey.currentState!.validate() || _selectedAccountId == null || _selectedCategoryId == null) return;
-    
+
     final isEditing = widget.transaction != null;
     final amount = double.parse(_amountController.text);
     final accounts = await _accountsFuture;
     final account = accounts.firstWhere((acc) => acc.id == _selectedAccountId);
+
+    if (_type == 'expense') {
+      double balanceToCheck = account.balance;
+      if (isEditing && widget.transaction!.type == 'expense' && widget.transaction!.accountId == _selectedAccountId) {
+        balanceToCheck += widget.transaction!.amount;
+      }
+
+      if (balanceToCheck < amount) {
+        if (!mounted) return;
+        Flushbar(
+          title: 'Solde Insuffisant',
+          message: 'Le solde du compte "${account.name}" (${account.balance.toStringAsFixed(2)} FCFA) est insuffisant pour cette opération.',
+          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.red[700]!,
+          flushbarPosition: FlushbarPosition.TOP,
+          icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
+        ).show(context);
+        return;
+      }
+    }
 
     // --- LOGIQUE DE MISE A JOUR DU SOLDE ---
     if (isEditing) {
