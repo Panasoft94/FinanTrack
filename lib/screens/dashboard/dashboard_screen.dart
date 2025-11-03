@@ -1,13 +1,15 @@
+import 'dart:io';
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/expense_category/expense_category_screen.dart';
 import 'package:budget/screens/guide/guide_screen.dart';
+import 'package:budget/screens/login.dart';
 import 'package:budget/screens/notifications/notifications_screen.dart';
 import 'package:budget/screens/premium/premium_screen.dart';
 import 'package:budget/screens/settings/settings_screen.dart';
 import 'package:budget/screens/statistics/data_statistics_screen.dart';
 import 'package:budget/screens/transactions/transactions_screen.dart';
-import 'package:budget/screens/login.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -91,18 +93,18 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           _showExitDialog(context);
         },
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.red,
         foregroundColor: Colors.white,
-        child: const Icon(Icons.exit_to_app),
-        tooltip: 'Quitter',
+        icon: const Icon(Icons.exit_to_app),
+        label: const Text('Quitter'),
       ),
     );
   }
-  
+
   void _showExitDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -113,12 +115,10 @@ class DashboardScreen extends StatelessWidget {
             children: const [
               Icon(Icons.exit_to_app, color: Colors.red),
               SizedBox(width: 10),
-              Expanded(
-                child: Text('Confirmation'),
-              ),
+              Expanded(child: Text('Confirmation')),
             ],
           ),
-          content: const Text('Voulez-vous vraiment quitter et retourner à l\'accueil ?'),
+          content: const Text('Voulez-vous vraiment quitter l\'application ?'),
           actionsAlignment: MainAxisAlignment.spaceAround,
           actions: <Widget>[
             OutlinedButton.icon(
@@ -135,10 +135,7 @@ class DashboardScreen extends StatelessWidget {
               icon: const Icon(Icons.exit_to_app),
               label: const Text('Quitter'),
               onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                  (Route<dynamic> route) => false,
-                );
+                exit(0); // Ferme l'application complètement
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
