@@ -287,9 +287,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   Widget _buildTransactionCard(TransactionWithDetails transaction) {
     final isExpense = transaction.type == 'expense';
-    final color = isExpense ? Colors.red[700] : Colors.green[700];
-    final icon = transaction.categoryIcon ?? (isExpense ? Icons.remove : Icons.add);
-    final categoryColor = transaction.categoryColor ?? Colors.grey;
+    final color = isExpense ? Colors.red[700]! : Colors.green[700]!;
+    final icon = isExpense ? Icons.arrow_downward : Icons.arrow_upward;
 
     return Card(
       elevation: 2,
@@ -299,7 +298,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         onTap: () => _showAddOrEditTransactionSheet(transaction: transaction),
         onLongPress: () => _showDeleteDialog(transaction),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        leading: CircleAvatar(backgroundColor: categoryColor.withOpacity(0.2), child: Icon(icon, color: categoryColor, size: 24)),
+        leading: CircleAvatar(
+          backgroundColor: color.withOpacity(0.2),
+          child: Icon(icon, color: color, size: 24),
+        ),
         title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
         trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
