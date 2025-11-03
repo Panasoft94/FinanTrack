@@ -20,6 +20,24 @@ class DashboardScreen extends StatelessWidget {
         children: [
           _buildDashboardTile(
             context,
+            icon: Icons.account_balance_wallet,
+            title: 'Gérer les comptes',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const AccountsScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
+            icon: Icons.category,
+            title: 'Catégorie depense',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const ExpenseCategoryScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
             icon: Icons.swap_horiz,
             title: 'Transactions',
             onTap: () {
@@ -51,24 +69,6 @@ class DashboardScreen extends StatelessWidget {
             title: 'Notifications',
             onTap: () {
               Navigator.of(context).push(_slideTransition(const NotificationsScreen()));
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildDashboardTile(
-            context,
-            icon: Icons.account_balance_wallet,
-            title: 'Gérer les comptes',
-            onTap: () {
-              Navigator.of(context).push(_slideTransition(const AccountsScreen()));
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildDashboardTile(
-            context,
-            icon: Icons.category,
-            title: 'Catégorie depense',
-            onTap: () {
-              Navigator.of(context).push(_slideTransition(const ExpenseCategoryScreen()));
             },
           ),
           const SizedBox(height: 16),
