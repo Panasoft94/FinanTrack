@@ -446,7 +446,23 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
                 future: _accountsFuture,
                 builder: (context, snapshot) => DropdownButtonFormField<int>(
                   value: _selectedAccountId,
-                  items: snapshot.hasData ? snapshot.data!.map((acc) => DropdownMenuItem(value: acc.id, child: Text(acc.name))).toList() : [],
+                  items: snapshot.hasData
+                      ? snapshot.data!.map((acc) {
+                          return DropdownMenuItem(
+                            value: acc.id,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(acc.name),
+                                Text(
+                                  '${acc.balance.toStringAsFixed(2)} ${acc.currencySymbol}',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList()
+                      : [],
                   onChanged: (val) => setState(() => _selectedAccountId = val),
                   decoration: InputDecoration(labelText: 'Compte', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                   validator: (val) => val == null ? 'Veuillez sélectionner un compte.' : null,

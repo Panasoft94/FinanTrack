@@ -1,5 +1,6 @@
 import 'package:budget/models/transactions_model.dart';
 import 'package:budget/screens/database/db_helper.dart';
+import 'package:budget/screens/virement_compte.dart';
 import 'package:flutter/material.dart';
 import './accounts_screen.dart'; // Importer pour la classe Account
 
@@ -37,47 +38,55 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
               prefixIcon: Icon(Icons.account_balance_wallet_outlined, color: Colors.grey[600]),
             ),
           ),
-          actionsAlignment: MainAxisAlignment.spaceAround,
           actions: <Widget>[
-            OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountController.text);
-                if (amount != null && amount > 0) {
-                  // 1. Mettre à jour le solde du compte
-                  widget.account.balance += amount;
-                  await DbHelper.updateAccount(widget.account.toMap());
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const VirementCompteScreen()));
+                  },
+                  child: const Text('Virement Compte'),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () async {
+                    final amount = double.tryParse(amountController.text);
+                    if (amount != null && amount > 0) {
+                      // 1. Mettre à jour le solde du compte
+                      widget.account.balance += amount;
+                      await DbHelper.updateAccount(widget.account.toMap());
 
-                  // 2. Créer la transaction correspondante
-                  final transactionData = {
-                    DbHelper.MONTANT: amount,
-                    DbHelper.TRANSACTION_TYPE: 'income',
-                    DbHelper.TRANSACTION_DATE: DateTime.now().toIso8601String(),
-                    DbHelper.ACCOUNT_ID: widget.account.id,
-                    DbHelper.TRANSACTION_DESCRIPTION: 'Approvisionnement du compte',
-                  };
-                  await DbHelper.insertTransaction(transactionData);
+                      // 2. Créer la transaction correspondante
+                      final transactionData = {
+                        DbHelper.MONTANT: amount,
+                        DbHelper.TRANSACTION_TYPE: 'income',
+                        DbHelper.TRANSACTION_DATE: DateTime.now().toIso8601String(),
+                        DbHelper.ACCOUNT_ID: widget.account.id,
+                        DbHelper.TRANSACTION_DESCRIPTION: 'Approvisionnement du compte',
+                      };
+                      await DbHelper.insertTransaction(transactionData);
 
-                  if (!mounted) return;
+                      if (!mounted) return;
 
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${amount.toStringAsFixed(2)} ${widget.account.currencySymbol} ajoutés avec succès.'),
-                      backgroundColor: Colors.green[700],
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${amount.toStringAsFixed(2)} ${widget.account.currencySymbol} ajoutés avec succès.'),
+                          backgroundColor: Colors.green[700],
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
 
-                  // 3. Rafraîchir l'écran
-                  setState(() {});
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-              child: const Text('Ajouter'),
+                      // 3. Rafraîchir l'écran
+                      setState(() {});
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  child: const Text('Ajouter'),
+                ),
+              ],
             ),
           ],
         );

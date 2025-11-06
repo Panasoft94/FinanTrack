@@ -24,7 +24,7 @@ class Account {
       id: map[DbHelper.ACCOUNT_ID],
       name: map[DbHelper.ACCOUNT_NAME],
       type: map[DbHelper.ACCOUNT_TYPE],
-      balance: map[DbHelper.ACCOUNT_BALANCE],
+      balance: (map[DbHelper.ACCOUNT_BALANCE] as num).toDouble(),
       currencySymbol: map[DbHelper.ACCOUNT_ICON],
     );
   }
@@ -279,7 +279,7 @@ class _AddOrEditAccountFormState extends State<_AddOrEditAccountForm> {
     final isEditing = widget.account != null;
     if (isEditing) {
       _nameController.text = widget.account!.name;
-      _balanceController.text = widget.account!.balance.toString();
+      _balanceController.text = widget.account!.balance.toStringAsFixed(2);
       _currencyController.text = widget.account!.currencySymbol;
       _selectedType = widget.account!.type;
     } else {

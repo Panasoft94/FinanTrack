@@ -19,7 +19,7 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
     "Préparation de l'environnement...",
     "Création des tables...",
     "Configuration initiale...",
-    "Presque terminé...",
+    "Ajout des données par défaut...",
     "Finalisation..."
   ];
 
@@ -56,6 +56,17 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
 
     await DbHelper.getdb(); // Assure la création de la DB
     await DbHelper.insertDefaultConfig(); // Insère la config par défaut
+
+    // Ajoute un compte par défaut si aucun n'existe
+    final accounts = await DbHelper.getAccounts();
+    if (accounts.isEmpty) {
+      await DbHelper.insertAccount({
+        'account_name': 'Compte defaut',
+        'account_balance': 0.00,
+        'account_type': 'Espèces', // Type de compte harmonisé
+        'account_icon': 'FCFA', // Ajout du symbole de la devise
+      });
+    }
 
     if (mounted && progress == 1.0) {
       _buttonController.forward();

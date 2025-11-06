@@ -1,3 +1,4 @@
+
 import 'dart:io'; //on utilise le fichier
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/config/base_config_screen.dart';
@@ -46,6 +47,7 @@ class DbHelper{
   static const String NOTIFICATION_CONTENU = 'notification_contenu';
   static const String NOTIFICATION_DATE = 'notification_date';
   static const String NOTIFICATION_IS_READ = 'is_read';
+  static const String NOTIFICATION_TYPE = 'notification_type'; // new
 
   static const String TRANSACTION_TABLE = 'transactions';
   static const String TRANSACTION_ID = 'transaction_id';
@@ -95,7 +97,7 @@ class DbHelper{
   //recherche de la base de données
   static Future<Database?> _initDb() async{
     String path = join(await getDatabasesPath(),'finantrack.db');
-    return await openDatabase(path,version: 1,
+    return await openDatabase(path,version: 3, // new version
         onCreate: (Database db,int version) async{
           await db.execute("CREATE TABLE $ACCOUNTS_TABLE($ACCOUNT_ID INTEGER PRIMARY KEY AUTOINCREMENT,$ACCOUNT_NAME TEXT,$ACCOUNT_TYPE TEXT,$ACCOUNT_BALANCE REAL,$ACCOUNT_ICON TEXT,$ACCOUNT_CREATED_AT TEXT,$ACCOUNT_UPDATED_AT TEXT)");
           await db.execute("CREATE TABLE $CATEGORIES_TABLE($CATEGORY_ID INTEGER PRIMARY KEY AUTOINCREMENT, $CATEGORY_NAME TEXT NOT NULL,$CATEGORY_TYPE TEXT NOT NULL,$CATEGORY_ICON TEXT,$CATEGORY_COLOR TEXT NOT NULL DEFAULT '#007AFF')");
@@ -117,7 +119,14 @@ class DbHelper{
           await db.execute("CREATE TABLE $DEVISE_TABLE($DEVISE_ID INTEGER PRIMARY KEY AUTOINCREMENT,$DEVISE_LIB TEXT,$DEVISE_VAL TEXT,$DEVISE_SYMBOLE TEXT)");
           await db.execute("CREATE TABLE $USERS_TABLE($USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,$USER_NAME TEXT,$USER_EMAIL TEXT,$USER_PASSWORD TEXT,$USER_PIN INTEGER,$USER_PHONE TEXT,$USER_ROLE TEXT,$USER_STATUS INTEGER,$USER_CREATED_AT TEXT,$USER_UPDATED_AT TEXT,$ACEPT_LICENCE INTEGER)");
           await db.execute("CREATE TABLE $CONFIG_TABLE($CONFIG_ID INTEGER PRIMARY KEY AUTOINCREMENT,$APP_NAME TEXT,$DEFAULT_LANGUAGE TEXT,$DEFAULT_YEAR INTEGER,$SELECTED_DEVISE_ID TEXT)");
-          await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT, $NOTIFICATION_IS_READ INTEGER DEFAULT 0)");
+          await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT, $NOTIFICATION_IS_READ INTEGER DEFAULT 0, $NOTIFICATION_TYPE TEXT)");
+        },
+        onUpgrade: (Database db, int oldVersion, int newVersion) async {
+           if (oldVersion < 2) {
+            // Drop the old table and recreate it.
+            await db.execute("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS");
+            await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT, $NOTIFICATION_IS_READ INTEGER DEFAULT 0, $NOTIFICATION_TYPE TEXT)");
+          }
         });
   }
 
@@ -596,6 +605,12 @@ class DbHelper{
   static Future<List<Map<String, dynamic>>> getNotifications() async {
     final dbClient = await getdb();
     return await dbClient!.query(TABLE_NOTIFICATIONS, orderBy: '$NOTIFICATION_DATE DESC');
+  }
+
+  static Future<int> getUnreadNotificationsCount() async {
+    final dbClient = await getdb();
+    final result = await dbClient!.rawQuery('SELECT COUNT(*) FROM $TABLE_NOTIFICATIONS WHERE $NOTIFICATION_IS_READ = 0');
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   static Future<int> markNotificationAsRead(int id) async {

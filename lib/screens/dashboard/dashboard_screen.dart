@@ -1,5 +1,7 @@
+
 import 'dart:io';
 import 'package:budget/screens/accounts/accounts_screen.dart';
+import 'package:budget/screens/database/db_helper.dart';
 import 'package:budget/screens/expense_category/expense_category_screen.dart';
 import 'package:budget/screens/guide/guide_screen.dart';
 import 'package:budget/screens/login.dart';
@@ -11,8 +13,28 @@ import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _unreadNotificationsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadNotificationsCount();
+  }
+
+  Future<void> _loadUnreadNotificationsCount() async {
+    final count = await DbHelper.getUnreadNotificationsCount();
+    setState(() {
+      _unreadNotificationsCount = count;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +91,9 @@ class DashboardScreen extends StatelessWidget {
             context,
             icon: Icons.notifications,
             title: 'Notifications',
+            badgeCount: _unreadNotificationsCount,
             onTap: () {
-              Navigator.of(context).push(_slideTransition(const NotificationsScreen()));
+              Navigator.of(context).push(_slideTransition(const NotificationsScreen())).then((_) => _loadUnreadNotificationsCount());
             },
           ),
           const SizedBox(height: 16),
@@ -149,7 +172,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardTile(BuildContext context, {required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _buildDashboardTile(BuildContext context, {required IconData icon, required String title, required VoidCallback onTap, int? badgeCount}) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -164,7 +187,21 @@ class DashboardScreen extends StatelessWidget {
             children: [
               Icon(icon, size: 40, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 24),
-              Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ),
+              if (badgeCount != null && badgeCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    badgeCount.toString(),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
             ],
           ),
         ),

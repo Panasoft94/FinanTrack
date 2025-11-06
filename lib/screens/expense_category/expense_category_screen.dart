@@ -1,4 +1,6 @@
+
 import 'package:budget/screens/database/db_helper.dart';
+import 'package:budget/screens/depense_budget.dart';
 import 'package:flutter/material.dart';
 
 // --- Modèle de Données ---
@@ -109,11 +111,25 @@ class _ExpenseCategoryScreenState extends State<ExpenseCategoryScreen> with Sing
         initialType: _tabController.index == 0 ? 'expense' : 'income',
         onSave: (cat) {
           final isEditing = cat.id != null;
-          (isEditing ? DbHelper.updateCategory(cat.toMap()) : DbHelper.insertCategory(cat.toMap()))
-              .then((_) {
-                setState(() {});
-                Navigator.of(context).pop();
-          });
+          if (isEditing) {
+            DbHelper.updateCategory(cat.toMap()).then((_) {
+              setState(() {});
+              Navigator.of(context).pop();
+            });
+          } else {
+            DbHelper.insertCategory(cat.toMap()).then((newId) {
+              setState(() {});
+              Navigator.of(context).pop(); // Close the bottom sheet
+              if (cat.type == 'expense') {
+                // Navigate to budget screen only for expenses
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => DepenseBudgetScreen(categoryId: newId),
+                  ),
+                );
+              }
+            });
+          }
         },
       ),
     );

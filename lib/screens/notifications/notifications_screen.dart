@@ -1,3 +1,4 @@
+
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -9,6 +10,7 @@ class NotificationModel {
   final String title;
   final String content;
   final DateTime date;
+  final String? type;
   bool isRead;
 
   NotificationModel({
@@ -16,6 +18,7 @@ class NotificationModel {
     required this.title,
     required this.content,
     required this.date,
+    this.type,
     required this.isRead,
   });
 
@@ -25,6 +28,7 @@ class NotificationModel {
       title: map[DbHelper.NOTIFICATION_TITRE],
       content: map[DbHelper.NOTIFICATION_CONTENU],
       date: DateTime.parse(map[DbHelper.NOTIFICATION_DATE]),
+      type: map[DbHelper.NOTIFICATION_TYPE],
       isRead: map[DbHelper.NOTIFICATION_IS_READ] == 1,
     );
   }
@@ -158,6 +162,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildNotificationCard(NotificationModel notification) {
+    final isSuccess = notification.type == 'success';
+    final color = isSuccess ? Colors.green : Colors.blue;
+
     return Dismissible(
       key: Key(notification.id.toString()),
       direction: DismissDirection.endToStart,
@@ -172,12 +179,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         elevation: 2,
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(
-          side: BorderSide(color: notification.isRead ? Colors.transparent : Colors.green, width: 1.5),
+          side: BorderSide(color: notification.isRead ? Colors.transparent : color, width: 1.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: ListTile(
           onTap: () => _markAsRead(notification),
-          leading: CircleAvatar(backgroundColor: notification.isRead ? Colors.grey[300] : Colors.green[100], child: Icon(Icons.notifications_active_outlined, color: notification.isRead ? Colors.grey[600] : Colors.green[800])),
+          leading: CircleAvatar(backgroundColor: notification.isRead ? Colors.grey[300] : color.withOpacity(0.2), child: Icon(Icons.notifications_active_outlined, color: notification.isRead ? Colors.grey[600] : color)),
           title: Text(notification.title, style: TextStyle(fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold)),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
