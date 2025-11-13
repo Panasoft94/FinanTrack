@@ -45,7 +45,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const VirementCompteScreen()));
+                    Navigator.of(context).push(_slideTransition(const VirementCompteScreen()));
                   },
                   child: const Text('Virement Compte'),
                 ),
@@ -100,6 +100,18 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
     } else {
       return amount.toStringAsFixed(2);
     }
+  }
+
+  PageRouteBuilder _slideTransition(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: Tween(begin: const Offset(1, 0), end: Offset.zero).animate(animation),
+          child: child,
+        );
+      },
+    );
   }
 
   @override
