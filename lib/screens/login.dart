@@ -72,15 +72,15 @@ class _LoginPageState extends State<LoginPage> {
         elevation: 6,
         toolbarHeight: 65,
         backgroundColor: Colors.green,
-        title: const Text(
-          "Authentification",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: Colors.white,
-            letterSpacing: 1.2,
-          ),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline),
+            SizedBox(width: 8),
+            Text('FinanTrack verrouillé'),
+          ],
         ),
+        foregroundColor: Colors.white,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(6)),
@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               SizedBox(height: 24),
-                  Text("Entrer pin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
+                  Text("Déverouillage par code pin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
                   SizedBox(height: 10),
                   Text("Veuillez entrer votre code pin de 6 chiffres !", style: TextStyle(fontStyle: FontStyle.italic), textAlign: TextAlign.center),
               SizedBox(height: 10),

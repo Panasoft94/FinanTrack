@@ -64,6 +64,18 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     );
   }
 
+  PageRouteBuilder _slideTransition(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: Tween(begin: const Offset(1, 0), end: Offset.zero).animate(animation),
+          child: child,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +104,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                 _buildActionButton(icon: Icons.edit, title: 'Modifier le profil', onTap: () => _showEditProfileSheet(user)),
                 const SizedBox(height: 15),
                 _buildActionButton(icon: Icons.lock, title: 'Changer le code PIN', onTap: () {
-                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ChangePinScreen()));
+                   Navigator.of(context).push(_slideTransition(const ChangePinScreen()));
                 }),
               ],
             ),
