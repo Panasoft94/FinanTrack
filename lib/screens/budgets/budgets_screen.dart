@@ -154,9 +154,23 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
     );
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.pie_chart_outline), SizedBox(width: 8), Text('Budgets')]),
+        centerTitle: true,
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: DbHelper.getBudgetsWithDetails(),
         builder: (context, snapshot) {
@@ -187,19 +201,111 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             );
           }
           final budgets = snapshot.data!.map((map) => BudgetWithDetails.fromMap(map)).toList();
-          return ListView.builder(
+          
+          final activeBudgets = budgets.where((b) => b.status == 1).toList();
+          final double totalBudget = activeBudgets.fold(0.0, (sum, b) => sum + b.amount);
+          final double totalSpent = activeBudgets.fold(0.0, (sum, b) => sum + b.spentAmount);
+
+          return ListView(
             padding: const EdgeInsets.all(16.0),
-            itemCount: budgets.length,
-            itemBuilder: (context, index) => _buildBudgetCard(budgets[index]),
+            children: [
+              _buildOverallSummaryCard(totalBudget, totalSpent),
+               const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.0),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text("Détails par Budget", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+              ),
+              ...budgets.map((budget) => _buildBudgetCard(budget)),
+            ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddOrEditBudgetSheet,
+        onPressed: () => _showAddOrEditBudgetSheet(),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
         tooltip: 'Ajouter un budget',
+      ),
+    );
+  }
+
+  Widget _buildOverallSummaryCard(double totalAmount, double totalSpent) {
+    if (totalAmount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final double progress = (totalSpent / totalAmount).clamp(0.0, 1.0);
+    final double remaining = totalAmount - totalSpent;
+    final Color progressColor = progress > 1 ? Colors.red : (progress > 0.8 ? Colors.orange : Colors.green);
+
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "État Général des Budgets Actifs",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 12,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: Text(
+                    '${_formatAmount(totalSpent)} / ${_formatAmount(totalAmount)} FCFA',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                    textAlign: TextAlign.end,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text(
+                  'Restant Total:',
+                  style: TextStyle(color: Colors.grey, fontSize: 15),
+                ),
+                const Spacer(),
+                Flexible(
+                  child: Text(
+                    '${_formatAmount(remaining)} FCFA',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: remaining >= 0 ? Colors.blue.shade800 : Colors.red.shade700,
+                    ),
+                    textAlign: TextAlign.end,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -240,9 +346,16 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                 ),
                 const Divider(height: 20),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const Spacer(),
-                    Text('${budget.spentAmount.toStringAsFixed(2)} / ${budget.amount.toStringAsFixed(2)} FCFA', style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Flexible(
+                      child: Text(
+                        '${_formatAmount(budget.spentAmount)} / ${_formatAmount(budget.amount)} FCFA',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        textAlign: TextAlign.end,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -251,9 +364,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Restant: ${remaining.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: remaining >= 0 ? Colors.black54 : Colors.red)),
+                    Flexible(child: Text('Restant: ${_formatAmount(remaining)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: remaining >= 0 ? Colors.black54 : Colors.red), overflow: TextOverflow.ellipsis,)),
                     if (isActive)
-                      Text(daysLeft > 0 ? '$daysLeft jours restants' : 'Terminé', style: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic)),
+                      Flexible(child: Text(daysLeft > 0 ? '$daysLeft jours restants' : 'Terminé', style: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic), textAlign: TextAlign.end, overflow: TextOverflow.ellipsis,)),
                   ],
                 ),
               ],

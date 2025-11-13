@@ -15,7 +15,7 @@ class Account {
     required this.name,
     required this.type,
     required this.balance,
-    this.currencySymbol = '€',
+    this.currencySymbol = 'FCFA',
   });
 
   // Convertit un Map en objet Account
@@ -142,6 +142,14 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,9 +246,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(account.type, style: TextStyle(color: Colors.grey[600], fontSize: 15)),
+                    Text('Solde disponible ', style: TextStyle(color: Colors.grey[600], fontSize: 15)),
                     Text(
-                      '${account.balance.toStringAsFixed(2)} ${account.currencySymbol}',
+                      '${_formatAmount(account.balance)} ${account.currencySymbol}',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -279,7 +287,8 @@ class _AddOrEditAccountFormState extends State<_AddOrEditAccountForm> {
     final isEditing = widget.account != null;
     if (isEditing) {
       _nameController.text = widget.account!.name;
-      _balanceController.text = widget.account!.balance.toStringAsFixed(2);
+      final balance = widget.account!.balance;
+      _balanceController.text = (balance == balance.truncate()) ? balance.truncate().toString() : balance.toStringAsFixed(2);
       _currencyController.text = widget.account!.currencySymbol;
       _selectedType = widget.account!.type;
     } else {

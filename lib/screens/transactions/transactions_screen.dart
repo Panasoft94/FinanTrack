@@ -36,6 +36,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     super.dispose();
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   void _showAddOrEditTransactionSheet({TransactionWithDetails? transaction}) {
     showModalBottomSheet(
       context: context,
@@ -280,7 +288,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       children: [
         Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
-        Text('${amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
+        Text('${_formatAmount(amount)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15)),
       ],
     );
   }
@@ -304,7 +312,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         ),
         title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
-        trailing: Text('${isExpense ? '-' : '+'} ${transaction.amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+        trailing: Text('${isExpense ? '-' : '+'} ${_formatAmount(transaction.amount)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
       ),
     );
   }
@@ -351,6 +359,14 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
     }
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   Future<void> _saveTransaction() async {
     if (!_formKey.currentState!.validate() || _selectedAccountId == null || _selectedCategoryId == null) return;
 
@@ -369,7 +385,7 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
         if (!mounted) return;
         Flushbar(
           title: 'Solde Insuffisant',
-          message: 'Le solde du compte "${account.name}" (${account.balance.toStringAsFixed(2)} FCFA) est insuffisant pour cette opération.',
+          message: 'Le solde du compte "${account.name}" (${_formatAmount(account.balance)} FCFA) est insuffisant pour cette opération.',
           duration: const Duration(seconds: 4),
           backgroundColor: Colors.red[700]!,
           flushbarPosition: FlushbarPosition.TOP,
@@ -455,7 +471,7 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
                               children: [
                                 Text(acc.name),
                                 Text(
-                                  '${acc.balance.toStringAsFixed(2)} ${acc.currencySymbol}',
+                                  '${_formatAmount(acc.balance)} ${acc.currencySymbol}',
                                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                                 ),
                               ],

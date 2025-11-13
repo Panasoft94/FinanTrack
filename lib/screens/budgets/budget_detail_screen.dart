@@ -23,6 +23,14 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
     _isActive = widget.budget.status == 1;
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   void _toggleStatus(bool newValue) {
     showDialog(
       context: context,
@@ -185,13 +193,13 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          _buildDetailRow('Budget total:', '${widget.budget.amount.toStringAsFixed(2)} FCFA', context),
+                          _buildDetailRow('Budget total:', '${_formatAmount(widget.budget.amount)} FCFA', context),
                           const Divider(height: 30),
-                          _buildDetailRow('Montant dépensé:', '${widget.budget.spentAmount.toStringAsFixed(2)} FCFA', context, valueColor: Colors.orange[800]),
+                          _buildDetailRow('Montant dépensé:', '${_formatAmount(widget.budget.spentAmount)} FCFA', context, valueColor: Colors.orange[800]),
                           const Divider(height: 30),
                           _buildDetailRow(
                             remaining >= 0 ? 'Montant restant:' : 'Dépassement:',
-                            '${remaining.abs().toStringAsFixed(2)} FCFA',
+                            '${_formatAmount(remaining.abs())} FCFA',
                             context,
                             valueColor: remaining >= 0 ? Colors.green[800] : Colors.red[800],
                           ),
@@ -275,9 +283,19 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
               child: Icon(icon, color: color, size: 24),
             ),
             title: Text(transaction.description ?? transaction.categoryName ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(transaction.accountName ?? 'Compte non spécifié', style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 2),
+                Text(
+                  DateFormat('d MMM yyyy', 'fr_FR').format(transaction.date),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
             trailing: Text(
-              '- ${transaction.amount.toStringAsFixed(2)} FCFA',
+              '- ${_formatAmount(transaction.amount)} FCFA',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
             ),
           ),

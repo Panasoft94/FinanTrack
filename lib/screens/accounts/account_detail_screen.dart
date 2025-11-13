@@ -73,7 +73,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('${amount.toStringAsFixed(2)} ${widget.account.currencySymbol} ajoutés avec succès.'),
+                          content: Text('${_formatAmount(amount)} ${widget.account.currencySymbol} ajoutés avec succès.'),
                           backgroundColor: Colors.green[700],
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -92,6 +92,14 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
         );
       },
     );
+  }
+
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
   }
 
   @override
@@ -164,7 +172,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
           Text("Solde actuel", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
           const SizedBox(height: 8),
           Text(
-            '${widget.account.balance.toStringAsFixed(2)} ${widget.account.currencySymbol}',
+            '${_formatAmount(widget.account.balance)} ${widget.account.currencySymbol}',
             style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
           ),
           const SizedBox(height: 16),
@@ -221,7 +229,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                   ),
                 ),
                 Text(
-                  '${transaction.type == 'expense' ? '−' : '+'}${transaction.amount.toStringAsFixed(2)} ${widget.account.currencySymbol}',
+                  '${transaction.type == 'expense' ? '−' : '+'}${_formatAmount(transaction.amount)} ${widget.account.currencySymbol}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

@@ -26,6 +26,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _loadReportData();
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   Future<void> _loadReportData() async {
     setState(() {
       _isLoading = true;
@@ -73,6 +81,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
+        footer: (pw.Context context) {
+          final start = DateFormat('d MMM', 'fr_FR').format(_startDate);
+          final end = DateFormat('d MMM yyyy', 'fr_FR').format(_endDate);
+          return pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Rapport financier du $start au $end',
+                style: pw.TextStyle(color: PdfColors.grey, fontStyle: pw.FontStyle.italic),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} sur ${context.pagesCount}',
+                style: pw.Theme.of(context).defaultTextStyle.copyWith(color: PdfColors.grey),
+              ),
+            ],
+          );
+        },
         build: (pw.Context context) => [
           pw.Header(
             level: 0,
@@ -104,14 +129,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
               t.description ?? 'N/A',
               t.categoryName ?? 'N/A',
               t.accountName ?? 'N/A',
-              '${t.type == 'expense' ? '-' : '+'}${t.amount.toStringAsFixed(2)} FCFA',
+              '${t.type == 'expense' ? '-' : '+'}${_formatAmount(t.amount)} FCFA',
             ]).toList(),
           ),
         ],
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+    final dateStr = DateFormat('dd_MM_yyyy').format(DateTime.now());
+    await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(), 
+        name: 'Rapport_financier_du_$dateStr.pdf');
   }
 
   pw.Widget _buildPdfSummary(String title, double amount, PdfColor color) {
@@ -119,7 +147,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       children: [
         pw.Text(title, style: const pw.TextStyle(fontSize: 14)),
         pw.SizedBox(height: 5),
-        pw.Text('${amount.toStringAsFixed(2)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18, color: color)),
+        pw.Text('${_formatAmount(amount)} FCFA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18, color: color)),
       ],
     );
   }
@@ -133,19 +161,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             _buildFilterSection(context),
             const SizedBox(height: 20),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _transactions.isEmpty
-                      ? const Center(child: Text("Aucune transaction pour cette période."))
-                      : _buildReportContent(_transactions),
-            ),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _transactions.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 50.0),
+                          child: Text("Aucune transaction pour cette période."),
+                        ),
+                      )
+                    : _buildReportContent(_transactions),
           ],
         ),
       ),
@@ -193,24 +224,38 @@ class _ReportsScreenState extends State<ReportsScreen> {
       expenseByCategory[categoryName] = (expenseByCategory[categoryName] ?? 0) + t.amount;
     }
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildSummaryCard(totalIncome, totalExpense, netResult),
-          const SizedBox(height: 20),
-          if (expenseByCategory.isNotEmpty)
-            PieChart(
-              dataMap: expenseByCategory,
-              animationDuration: const Duration(milliseconds: 800),
-              chartLegendSpacing: 32,
-              chartRadius: MediaQuery.of(context).size.width / 3.2,
-              initialAngleInDegree: 0,
-              chartType: ChartType.ring,
-              ringStrokeWidth: 32,
-              legendOptions: const LegendOptions(showLegendsInRow: true, legendPosition: LegendPosition.bottom, showLegends: true, legendTextStyle: TextStyle(fontWeight: FontWeight.bold)),
-              chartValuesOptions: const ChartValuesOptions(showChartValueBackground: true, showChartValues: true, showChartValuesInPercentage: true, decimalPlaces: 1),
-            ),
+    return Column(
+      children: [
+        _buildSummaryCard(totalIncome, totalExpense, netResult),
+        const SizedBox(height: 20),
+        if (expenseByCategory.isNotEmpty) ...[
+          PieChart(
+            dataMap: expenseByCategory,
+            animationDuration: const Duration(milliseconds: 800),
+            chartLegendSpacing: 32,
+            chartRadius: MediaQuery.of(context).size.width / 3.2,
+            initialAngleInDegree: 0,
+            chartType: ChartType.ring,
+            ringStrokeWidth: 32,
+            legendOptions: const LegendOptions(showLegendsInRow: true, legendPosition: LegendPosition.bottom, showLegends: true, legendTextStyle: TextStyle(fontWeight: FontWeight.bold)),
+            chartValuesOptions: const ChartValuesOptions(showChartValueBackground: true, showChartValues: true, showChartValuesInPercentage: true, decimalPlaces: 1),
+          ),
+          const SizedBox(height: 30),
         ],
+        _buildFooter(),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    final start = DateFormat('d MMM', 'fr_FR').format(_startDate);
+    final end = DateFormat('d MMM yyyy', 'fr_FR').format(_endDate);
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: Text(
+        'Rapport financier du $start au $end',
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
       ),
     );
   }
@@ -250,7 +295,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: TextStyle(fontSize: 16, color: Colors.grey[800])),
-        Text('${amount.toStringAsFixed(2)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
+        Text('${_formatAmount(amount)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
       ],
     );
   }

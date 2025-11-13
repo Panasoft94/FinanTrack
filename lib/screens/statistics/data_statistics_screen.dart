@@ -20,6 +20,14 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
     _statsFuture = DbHelper.getDashboardStatistics();
   }
 
+  String _formatAmount(double amount) {
+    if (amount == amount.truncate()) {
+      return amount.truncate().toString();
+    } else {
+      return amount.toStringAsFixed(2);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,7 +174,7 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(account[DbHelper.ACCOUNT_NAME], style: const TextStyle(fontSize: 16)),
-                        Text('${(account[DbHelper.ACCOUNT_BALANCE] as double).toStringAsFixed(2)} FCFA', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('${_formatAmount(account[DbHelper.ACCOUNT_BALANCE] as double)} FCFA', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   )),
@@ -185,7 +193,7 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
       mainAxisSpacing: 16,
       childAspectRatio: 1.2,
       children: [
-        _buildStatCard('Solde Total', '${(stats['totalBalance'] as double).toStringAsFixed(2)} FCFA', Icons.account_balance_wallet, Colors.blue),
+        _buildStatCard('Solde Total', '${_formatAmount(stats['totalBalance'] as double)} FCFA', Icons.account_balance_wallet, Colors.blue),
         _buildStatCard('Comptes', stats['accountsCount'].toString(), Icons.credit_card, Colors.orange),
         _buildStatCard('Transactions', stats['transactionsCount'].toString(), Icons.swap_horiz, Colors.purple),
         _buildStatCard('Budgets Actifs', stats['activeBudgetsCount'].toString(), Icons.inventory_2, Colors.green),
