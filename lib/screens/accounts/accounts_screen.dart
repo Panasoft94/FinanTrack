@@ -177,11 +177,25 @@ class _AccountsScreenState extends State<AccountsScreen> {
             );
           } else {
             final accounts = snapshot.data!;
+            final totalBalance = accounts.fold(0.0, (sum, account) => sum + account.balance);
+
             accounts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-            return ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: accounts.length,
-              itemBuilder: (context, index) => _buildAccountCard(accounts[index]),
+
+            return Column(
+              children: [
+                _buildTotalBalanceCard(totalBalance),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                  child: Row(children: [Expanded(child: Divider()), Text("  Tous les comptes  ", style: TextStyle(color: Colors.grey)), Expanded(child: Divider())]),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    itemCount: accounts.length,
+                    itemBuilder: (context, index) => _buildAccountCard(accounts[index]),
+                  ),
+                ),
+              ],
             );
           }
         },
@@ -192,6 +206,31 @@ class _AccountsScreenState extends State<AccountsScreen> {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
         tooltip: 'Ajouter un compte',
+      ),
+    );
+  }
+
+  Widget _buildTotalBalanceCard(double totalBalance) {
+    return Card(
+      margin: const EdgeInsets.all(16.0),
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.green.shade700,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Solde Total',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            Text(
+              '${_formatAmount(totalBalance)} FCFA',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }
