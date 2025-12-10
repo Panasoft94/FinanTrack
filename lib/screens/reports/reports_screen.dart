@@ -20,6 +20,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
   List<TransactionWithDetails> _transactions = [];
   bool _isLoading = false;
 
+  final List<Color> _colorList = const [
+    Color(0xFF8A2BE2), // BlueViolet
+    Color(0xFF00BFFF), // DeepSkyBlue
+    Color(0xFF7FFFD4), // Aquamarine
+    Color(0xFF3CB371), // MediumSeaGreen
+    Color(0xFFFDD835), // Vivid Yellow
+    Color(0xFFFFB74D), // Light Orange
+    Color(0xFFFF7043), // Vivid Orange
+    Color(0xFFEC407A), // Vivid Pink
+    Color(0xFF7E57C2), // Deep Purple
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +68,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: isStartDate ? _startDate : _endDate,
-      firstDate: DateTime(2020), 
+      firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
     if (picked != null) {
@@ -138,7 +150,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final dateStr = DateFormat('dd_MM_yyyy').format(DateTime.now());
     await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(), 
+        onLayout: (PdfPageFormat format) async => pdf.save(),
         name: 'Rapport_financier_du_$dateStr.pdf');
   }
 
@@ -224,26 +236,71 @@ class _ReportsScreenState extends State<ReportsScreen> {
       expenseByCategory[categoryName] = (expenseByCategory[categoryName] ?? 0) + t.amount;
     }
 
+    final sortedEntries = expenseByCategory.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    final sortedExpenseByCategory = Map<String, double>.fromEntries(sortedEntries);
+
     return Column(
       children: [
         _buildSummaryCard(totalIncome, totalExpense, netResult),
         const SizedBox(height: 20),
         if (expenseByCategory.isNotEmpty) ...[
           PieChart(
-            dataMap: expenseByCategory,
+            dataMap: sortedExpenseByCategory,
             animationDuration: const Duration(milliseconds: 800),
             chartLegendSpacing: 32,
             chartRadius: MediaQuery.of(context).size.width / 3.2,
             initialAngleInDegree: 0,
             chartType: ChartType.ring,
             ringStrokeWidth: 32,
-            legendOptions: const LegendOptions(showLegendsInRow: true, legendPosition: LegendPosition.bottom, showLegends: true, legendTextStyle: TextStyle(fontWeight: FontWeight.bold)),
+            colorList: _colorList,
+            legendOptions: const LegendOptions(showLegends: false),
             chartValuesOptions: const ChartValuesOptions(showChartValueBackground: true, showChartValues: true, showChartValuesInPercentage: true, decimalPlaces: 1),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
+          _buildCustomLegend(sortedExpenseByCategory, totalExpense),
         ],
+        const SizedBox(height: 20),
         _buildFooter(),
       ],
+    );
+  }
+
+  Widget _buildCustomLegend(Map<String, double> data, double total) {
+    if (total == 0) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: data.entries.toList().asMap().entries.map((indexedEntry) {
+        final index = indexedEntry.key;
+        final entry = indexedEntry.value;
+        final percentage = (entry.value / total) * 100;
+        final color = _colorList[index % _colorList.length];
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${index + 1} - ${entry.key} (${percentage.toStringAsFixed(1)}%)',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 

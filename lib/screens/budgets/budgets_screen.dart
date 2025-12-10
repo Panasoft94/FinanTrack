@@ -201,6 +201,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             );
           }
           final budgets = snapshot.data!.map((map) => BudgetWithDetails.fromMap(map)).toList();
+          budgets.sort((a, b) => a.amount.compareTo(b.amount));
           
           final activeBudgets = budgets.where((b) => b.status == 1).toList();
           final double totalBudget = activeBudgets.fold(0.0, (sum, b) => sum + b.amount);

@@ -194,8 +194,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             final query = _searchQuery.toLowerCase();
             if (query.isEmpty) return true;
             return (t.description?.toLowerCase().contains(query) ?? false) ||
-                   (t.categoryName?.toLowerCase().contains(query) ?? false) ||
-                   (t.accountName?.toLowerCase().contains(query) ?? false);
+                (t.categoryName?.toLowerCase().contains(query) ?? false) ||
+                (t.accountName?.toLowerCase().contains(query) ?? false);
           }).toList();
 
           if (filteredTransactions.isEmpty) {
@@ -219,7 +219,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ),
             );
           }
-          
+
           // Grouper les transactions par jour
           final Map<DateTime, List<TransactionWithDetails>> groupedTransactions = {};
           for (var t in filteredTransactions) {
@@ -229,7 +229,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             }
             groupedTransactions[dateKey]!.add(t);
           }
-          
+
           final sortedDates = groupedTransactions.keys.toList()..sort((a, b) => b.compareTo(a));
 
           return ListView.builder(
@@ -238,7 +238,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             itemBuilder: (context, index) {
               final date = sortedDates[index];
               final dailyTransactions = groupedTransactions[date]!;
-              
+
               // Calculer les totaux de la journée
               final double dailyIncome = dailyTransactions.where((t) => t.type == 'income').fold(0, (sum, t) => sum + t.amount);
               final double dailyExpense = dailyTransactions.where((t) => t.type == 'expense').fold(0, (sum, t) => sum + t.amount);
@@ -464,20 +464,20 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
                   value: _selectedAccountId,
                   items: snapshot.hasData
                       ? snapshot.data!.map((acc) {
-                          return DropdownMenuItem(
-                            value: acc.id,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(acc.name),
-                                Text(
-                                  '${_formatAmount(acc.balance)} ${acc.currencySymbol}',
-                                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList()
+                    return DropdownMenuItem(
+                      value: acc.id,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(acc.name),
+                          Text(
+                            '${_formatAmount(acc.balance)} ${acc.currencySymbol}',
+                            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList()
                       : [],
                   onChanged: (val) => setState(() => _selectedAccountId = val),
                   decoration: InputDecoration(labelText: 'Compte', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
@@ -487,22 +487,45 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
               const SizedBox(height: 15),
               FutureBuilder<List<Category>>(
                 future: _categoriesFuture,
-                builder: (context, snapshot) => DropdownButtonFormField<int>(
-                  value: _selectedCategoryId,
-                  items: snapshot.hasData ? snapshot.data!.map((cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name))).toList() : [],
-                  onChanged: (val) => setState(() => _selectedCategoryId = val),
-                  decoration: InputDecoration(labelText: 'Catégorie', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                  validator: (val) => val == null ? 'Veuillez sélectionner une catégorie.' : null,
-                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  // Sort the categories alphabetically
+                  final sortedCategories = snapshot.data!;
+                  sortedCategories.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+                  return DropdownButtonFormField<int>(
+                    value: _selectedCategoryId,
+                    items: sortedCategories.map((cat) {
+                      return DropdownMenuItem(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedCategoryId = val),
+                    decoration: InputDecoration(
+                      labelText: 'Catégorie',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (val) => val == null ? 'Veuillez sélectionner une catégorie.' : null,
+                  );
+                },
               ),
-               const SizedBox(height: 15),
+              const SizedBox(height: 15),
               ListTile(
                 onTap: () async {
                   final pickedDate = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2020), lastDate: DateTime(2030));
                   if (pickedDate != null) setState(() => _selectedDate = pickedDate);
                 },
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.grey)),
-                leading: const Icon(Icons.calendar_today_outlined), 
+                leading: const Icon(Icons.calendar_today_outlined),
                 title: Text(DateFormat('d MMMM yyyy', 'fr_FR').format(_selectedDate)),
               ),
               const SizedBox(height: 30),

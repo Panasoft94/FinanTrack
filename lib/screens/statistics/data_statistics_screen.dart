@@ -14,6 +14,18 @@ class DataStatisticsScreen extends StatefulWidget {
 class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
   late Future<Map<String, dynamic>> _statsFuture;
 
+  final List<Color> _colorList = const [
+    Color(0xFF8A2BE2), // BlueViolet
+    Color(0xFF00BFFF), // DeepSkyBlue
+    Color(0xFF7FFFD4), // Aquamarine
+    Color(0xFF3CB371), // MediumSeaGreen
+    Color(0xFFFDD835), // Vivid Yellow
+    Color(0xFFFFB74D), // Light Orange
+    Color(0xFFFF7043), // Vivid Orange
+    Color(0xFFEC407A), // Vivid Pink
+    Color(0xFF7E57C2), // Deep Purple
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +73,11 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
             }
           }
 
+          final sortedEntries = expenseData.entries.toList()
+            ..sort((a, b) => a.value.compareTo(b.value));
+          final sortedExpenseData = Map<String, double>.fromEntries(sortedEntries);
+          final double totalExpense = expenseData.values.fold(0.0, (sum, item) => sum + item);
+
           // --- Préparation des données pour le graphique de tendance ---
           final List<FlSpot> expenseTrendSpots = [];
           final trendData = (stats['expenseTrend'] as List<dynamic>?) ?? [];
@@ -84,7 +101,7 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
                 const SizedBox(height: 20),
                 _buildStatsGrid(stats),
                 const SizedBox(height: 30),
-                if (expenseData.isNotEmpty)
+                if (sortedExpenseData.isNotEmpty)
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -95,11 +112,14 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
                           Text("Dépenses par catégorie", style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: 20),
                           pie.PieChart(
-                            dataMap: expenseData,
+                            dataMap: sortedExpenseData,
                             chartRadius: MediaQuery.of(context).size.width / 2.5,
-                            legendOptions: const pie.LegendOptions(legendPosition: pie.LegendPosition.bottom, showLegendsInRow: true),
+                            legendOptions: const pie.LegendOptions(showLegends: false),
                             chartValuesOptions: const pie.ChartValuesOptions(showChartValuesInPercentage: true, decimalPlaces: 1),
+                            colorList: _colorList,
                           ),
+                          const SizedBox(height: 20),
+                          _buildCustomLegend(sortedExpenseData, totalExpense),
                         ],
                       ),
                     ),
@@ -226,6 +246,44 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCustomLegend(Map<String, double> data, double total) {
+    if (total == 0) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: data.entries.toList().asMap().entries.map((indexedEntry) {
+        final index = indexedEntry.key;
+        final entry = indexedEntry.value;
+        final percentage = (entry.value / total) * 100;
+        final color = _colorList[index % _colorList.length];
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${index + 1} - ${entry.key} (${percentage.toStringAsFixed(1)}%)',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
