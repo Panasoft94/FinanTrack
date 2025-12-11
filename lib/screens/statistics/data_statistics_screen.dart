@@ -40,6 +40,11 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
     }
   }
 
+  Color _getCategoryColor(String categoryName) {
+    final index = categoryName.hashCode.abs() % _colorList.length;
+    return _colorList[index];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,6 +82,8 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
             ..sort((a, b) => a.value.compareTo(b.value));
           final sortedExpenseData = Map<String, double>.fromEntries(sortedEntries);
           final double totalExpense = expenseData.values.fold(0.0, (sum, item) => sum + item);
+
+          final chartColorList = sortedExpenseData.keys.map((name) => _getCategoryColor(name)).toList();
 
           // --- Préparation des données pour le graphique de tendance ---
           final List<FlSpot> expenseTrendSpots = [];
@@ -116,7 +123,7 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
                             chartRadius: MediaQuery.of(context).size.width / 2.5,
                             legendOptions: const pie.LegendOptions(showLegends: false),
                             chartValuesOptions: const pie.ChartValuesOptions(showChartValuesInPercentage: true, decimalPlaces: 1),
-                            colorList: _colorList,
+                            colorList: chartColorList,
                           ),
                           const SizedBox(height: 20),
                           _buildCustomLegend(sortedExpenseData, totalExpense),
@@ -259,7 +266,7 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
         final index = indexedEntry.key;
         final entry = indexedEntry.value;
         final percentage = (entry.value / total) * 100;
-        final color = _colorList[index % _colorList.length];
+        final color = _getCategoryColor(entry.key);
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),

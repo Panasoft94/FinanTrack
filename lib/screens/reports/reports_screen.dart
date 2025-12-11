@@ -46,6 +46,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
+  Color _getCategoryColor(String categoryName) {
+    final index = categoryName.hashCode.abs() % _colorList.length;
+    return _colorList[index];
+  }
+
   Future<void> _loadReportData() async {
     setState(() {
       _isLoading = true;
@@ -240,6 +245,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ..sort((a, b) => a.value.compareTo(b.value));
     final sortedExpenseByCategory = Map<String, double>.fromEntries(sortedEntries);
 
+    final chartColorList = sortedExpenseByCategory.keys.map((name) => _getCategoryColor(name)).toList();
+
     return Column(
       children: [
         _buildSummaryCard(totalIncome, totalExpense, netResult),
@@ -253,7 +260,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             initialAngleInDegree: 0,
             chartType: ChartType.ring,
             ringStrokeWidth: 32,
-            colorList: _colorList,
+            colorList: chartColorList,
             legendOptions: const LegendOptions(showLegends: false),
             chartValuesOptions: const ChartValuesOptions(showChartValueBackground: true, showChartValues: true, showChartValuesInPercentage: true, decimalPlaces: 1),
           ),
@@ -276,7 +283,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final index = indexedEntry.key;
         final entry = indexedEntry.value;
         final percentage = (entry.value / total) * 100;
-        final color = _colorList[index % _colorList.length];
+        final color = _getCategoryColor(entry.key);
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
