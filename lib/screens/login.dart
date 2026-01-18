@@ -5,6 +5,7 @@ import 'package:another_flushbar/flushbar.dart';
 import 'package:budget/screens/home/home_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:budget/screens/licence_page.dart';
+import 'package:flutter/services.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,6 +17,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final LocalAuthentication auth = LocalAuthentication();
   final TextEditingController controller = TextEditingController();
+  final FocusNode _pinFocusNode = FocusNode();
   bool biometricAvailable = false;
   bool isLoading = false;
   List<Map<String, dynamic>> _users = [];
@@ -26,9 +28,15 @@ class _LoginPageState extends State<LoginPage> {
     _loadInitialData();
   }
 
+  @override
+  void dispose() {
+    _pinFocusNode.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadInitialData() async {
-    await _user(); 
-    await _checkBiometricAvailability(); 
+    await _user();
+    await _checkBiometricAvailability();
   }
 
   Future<void> _user() async {
@@ -90,26 +98,42 @@ class _LoginPageState extends State<LoginPage> {
         child: Center(
           child: Column(
             children: [
-              SizedBox(height: 24),
-                  Text("Déverouillage par code pin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
-                  SizedBox(height: 10),
-                  Text("Veuillez entrer votre code pin de 6 chiffres !", style: TextStyle(fontStyle: FontStyle.italic), textAlign: TextAlign.center),
-              SizedBox(height: 10),
+              const SizedBox(height: 24),
+              const Text(
+                "Déverouillage par code pin",
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Colors.black),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Veuillez entrer votre code pin de 6 chiffres !",
+                style: TextStyle(fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
               Pinput(
                 controller: controller,
                 length: 6,
                 onCompleted: _onCompleted,
                 obscureText: true,
                 autofocus: true,
+                focusNode: _pinFocusNode,
               ),
-
-              SizedBox(height: 12),
-              Spacer(),
-              if (biometricAvailable && _users.isNotEmpty) 
+              const SizedBox(height: 12),
+              const Spacer(),
+              if (biometricAvailable && _users.isNotEmpty)
                 Column(
                   children: <Widget>[
-                    Text("OU", style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold, color: Colors.black)),
-                    SizedBox(height: 38),
+                    const Text(
+                      "OU",
+                      style: TextStyle(
+                          fontSize: 23,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
+                    ),
+                    const SizedBox(height: 38),
                     InkWell(
                       onTap: _biometricAuthentication,
                       borderRadius: BorderRadius.circular(30),
@@ -121,20 +145,22 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.green,
                           border: Border.all(color: Colors.green),
                         ),
-                        child: isLoading 
-                            ? CircularProgressIndicator(
+                        child: isLoading
+                            ? const CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white),
                         )
-                            : Icon(Icons.fingerprint, size: 65, color: Colors.white),
+                            : const Icon(Icons.fingerprint,
+                            size: 65, color: Colors.white),
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Text("Empreinte biométrique"),
+                    const SizedBox(height: 16),
+                    const Text("Empreinte biométrique"),
                   ],
                 ),
-                 SizedBox(height: 30), 
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -144,13 +170,14 @@ class _LoginPageState extends State<LoginPage> {
 
   void _onCompleted(String enteredPin) {
     if (_users.isEmpty) {
-       _showFlushbar("Veuillez d'abord créer un code PIN.", Colors.orangeAccent);
+      _showFlushbar("Veuillez d'abord créer un code PIN.", Colors.orangeAccent);
       return;
     }
-    if (enteredPin == _users[0]['user_pin'].toString() && _users[0]['acept_licence'] == 1) {
+    if (enteredPin == _users[0]['user_pin'].toString() &&
+        _users[0]['acept_licence'] == 1) {
       _redirectionHome();
-      _showFlushbar("Nous vous souhaitons la bienvenue !", Colors.blue);
-    } else if (enteredPin == _users[0]['user_pin'].toString() && _users[0]['acept_licence'] == 0) {
+    } else if (enteredPin == _users[0]['user_pin'].toString() &&
+        _users[0]['acept_licence'] == 0) {
       _redirectionLicence(usersId: _users[0]['user_id']);
     } else {
       _showFlushbar("Votre code pin de 6 chiffres est incorrect !", Colors.red);
@@ -159,38 +186,23 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _redirectionHome() {
-    print("LOGIN_PAGE: _redirectionHome called. Navigating to HomePage."); // DEBUG
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) {
       return const HomeScreen();
     }));
   }
 
-  // Modifiée pour utiliser push et attendre un résultat
   Future<void> _redirectionLicence({required int usersId}) async {
-    print("LOGIN_PAGE: _redirectionLicence called. Navigating to LicencePage for user $usersId."); //DEBUG
     if (!mounted) return;
 
     final licenceAccepted = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => LicencePage(
-          usersId: usersId, 
-          // onAccepted n'est plus passé ici
-        ),
+        builder: (context) => LicencePage(usersId: usersId),
       ),
     );
 
-    print("LOGIN_PAGE: Returned from LicencePage. Licence accepted: $licenceAccepted"); // DEBUG
-
     if (mounted && licenceAccepted == true) {
-      print("LOGIN_PAGE: Licence was accepted, calling _redirectionHome."); // DEBUG
       _redirectionHome();
-    } else {
-      print("LOGIN_PAGE: Licence was not accepted or user returned."); // DEBUG
-      // Si la licence n'est pas acceptée, on pourrait vouloir vider le PIN entré ou prendre une autre action.
-      // Pour l'instant, l'utilisateur reste sur la page de login.
-      // Si l'utilisateur appuie sur retour depuis la page de Licence, il reviendra à LoginPage.
-      // Si la LoginPage avait été remplacée, cela ne serait pas possible.
     }
   }
 
@@ -208,23 +220,30 @@ class _LoginPageState extends State<LoginPage> {
       bool authenticated = await auth.authenticate(
         localizedReason: 'Déverrouillage par empreinte biométrique !',
         options: const AuthenticationOptions(
-          biometricOnly: true, 
-          useErrorDialogs: true, 
-          stickyAuth: true, 
+          biometricOnly: true,
+          useErrorDialogs: true,
+          stickyAuth: true,
         ),
       );
 
-      if (mounted) { 
+      if (mounted) {
         setState(() {
           isLoading = false;
         });
 
-        if (authenticated && _users[0]['acept_licence'] == 1) {
-          _redirectionHome();
-          _showFlushbar("Bienvenue 👋", Colors.blue);
-        } else if (authenticated && _users[0]['acept_licence'] == 0) {
-          _redirectionLicence(usersId: _users[0]['user_id']);
-        } 
+        if (authenticated) {
+          if (_users[0]['acept_licence'] == 1) {
+            _redirectionHome();
+          } else if (_users[0]['acept_licence'] == 0) {
+            _redirectionLicence(usersId: _users[0]['user_id']);
+          }
+        } else {
+          // Annulation biométrique → focus + clavier forcé
+          controller.clear();
+          Future.delayed(const Duration(milliseconds: 50), () {
+            _focusPinField();
+          });
+        }
       }
     } catch (e) {
       print("Erreur _biometricAuthentication: ${e.toString()}");
@@ -232,21 +251,33 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           isLoading = false;
         });
+        controller.clear();
+        Future.delayed(const Duration(milliseconds: 50), () {
+          _focusPinField();
+        });
       }
     }
   }
 
+  /// Force le focus sur le champ PIN et ouvre le clavier
+  Future<void> _focusPinField() async {
+    if (!mounted) return;
+    FocusScope.of(context).requestFocus(_pinFocusNode);
+    await Future.delayed(const Duration(milliseconds: 50));
+    SystemChannels.textInput.invokeMethod('TextInput.show');
+  }
+
   void _showFlushbar(String message, Color color) {
-    if (!mounted) return; 
+    if (!mounted) return;
     Flushbar(
       message: message,
       backgroundColor: color,
-      duration: Duration(seconds: 3),
-      margin: EdgeInsets.all(8),
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(8),
       borderRadius: BorderRadius.circular(8),
       flushbarPosition: FlushbarPosition.TOP,
-      animationDuration: Duration(milliseconds: 500),
-      icon: Icon(Icons.info_outline, color: Colors.white),
+      animationDuration: const Duration(milliseconds: 500),
+      icon: const Icon(Icons.info_outline, color: Colors.white),
     ).show(context);
   }
 }
