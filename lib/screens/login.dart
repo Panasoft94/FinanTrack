@@ -182,6 +182,10 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       _showFlushbar("Votre code pin de 6 chiffres est incorrect !", Colors.red);
       controller.clear();
+      // ⚡ Correction : refocus + clavier automatique
+      Future.delayed(const Duration(milliseconds: 50), () {
+        _focusPinField();
+      });
     }
   }
 
@@ -238,7 +242,6 @@ class _LoginPageState extends State<LoginPage> {
             _redirectionLicence(usersId: _users[0]['user_id']);
           }
         } else {
-          // Annulation biométrique → focus + clavier forcé
           controller.clear();
           Future.delayed(const Duration(milliseconds: 50), () {
             _focusPinField();
