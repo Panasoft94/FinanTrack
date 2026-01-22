@@ -1,10 +1,10 @@
-
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
 
 class VirementCompteScreen extends StatefulWidget {
-  const VirementCompteScreen({Key? key}) : super(key: key);
+  final Account? fromAccount;
+  const VirementCompteScreen({Key? key, this.fromAccount}) : super(key: key);
 
   @override
   _VirementCompteScreenState createState() => _VirementCompteScreenState();
@@ -21,6 +21,7 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
   @override
   void initState() {
     super.initState();
+    _fromAccount = widget.fromAccount;
     _loadAccounts();
   }
 
@@ -28,6 +29,14 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
     final accounts = await DbHelper.getAccounts();
     setState(() {
       _accounts = accounts;
+      // Si un compte source a été passé, on s'assure de pointer vers l'objet de la liste
+      if (_fromAccount != null) {
+        try {
+          _fromAccount = _accounts.firstWhere((acc) => acc.id == _fromAccount!.id);
+        } catch (e) {
+          // Garder la valeur actuelle si non trouvée dans la liste
+        }
+      }
     });
   }
 
@@ -62,32 +71,26 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
         return;
       }
 
-      // Perform the transfer
+      // Perform the transfer (update balances)
       _fromAccount!.balance -= amount;
       _toAccount!.balance += amount;
 
       await DbHelper.updateAccount(_fromAccount!.toMap());
       await DbHelper.updateAccount(_toAccount!.toMap());
 
-      // Create transactions
+      // Create only the credit transaction as a 'Virement interne' type 
       final now = DateTime.now().toIso8601String();
-      final expenseTransaction = {
+      final transferTransaction = {
         DbHelper.MONTANT: amount,
-        DbHelper.TRANSACTION_TYPE: 'expense',
-        DbHelper.TRANSACTION_DATE: now,
-        DbHelper.ACCOUNT_ID: _fromAccount!.id,
-        DbHelper.TRANSACTION_DESCRIPTION: 'Virement vers ${_toAccount!.name}',
-      };
-      final incomeTransaction = {
-        DbHelper.MONTANT: amount,
-        DbHelper.TRANSACTION_TYPE: 'income',
+        DbHelper.TRANSACTION_TYPE: 'Virement interne', 
         DbHelper.TRANSACTION_DATE: now,
         DbHelper.ACCOUNT_ID: _toAccount!.id,
         DbHelper.TRANSACTION_DESCRIPTION: 'Virement depuis ${_fromAccount!.name}',
       };
 
-      await DbHelper.insertTransaction(expenseTransaction);
-      await DbHelper.insertTransaction(incomeTransaction);
+      await DbHelper.insertTransaction(transferTransaction);
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Virement effectué avec succès!')),
@@ -142,7 +145,6 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
                 onChanged: (account) {
                   setState(() {
                     _fromAccount = account;
-                    // If the 'to' account is the same as the new 'from' account, reset it
                     if (_toAccount != null && _toAccount!.id == _fromAccount!.id) {
                       _toAccount = null;
                     }

@@ -18,79 +18,135 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
   void _showAddFundsDialog() {
     final amountController = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-          title: const Row(children: [
-            Icon(Icons.add_card_outlined, color: Colors.green),
-            SizedBox(width: 10),
-            Text("Approvisionner")
-          ]),
-          content: TextField(
-            controller: amountController,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Montant à ajouter',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: Icon(Icons.account_balance_wallet_outlined, color: Colors.grey[600]),
-            ),
-          ),
-          actions: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(_slideTransition(const VirementCompteScreen()));
-                  },
-                  child: const Text('Virement Compte'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          left: 24,
+          right: 24,
+          top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    final amount = double.tryParse(amountController.text);
-                    if (amount != null && amount > 0) {
-                      // 1. Mettre à jour le solde du compte
-                      widget.account.balance += amount;
-                      await DbHelper.updateAccount(widget.account.toMap());
-
-                      // 2. Créer la transaction correspondante
-                      final transactionData = {
-                        DbHelper.MONTANT: amount,
-                        DbHelper.TRANSACTION_TYPE: 'income',
-                        DbHelper.TRANSACTION_DATE: DateTime.now().toIso8601String(),
-                        DbHelper.ACCOUNT_ID: widget.account.id,
-                        DbHelper.TRANSACTION_DESCRIPTION: 'Approvisionnement du compte',
-                      };
-                      await DbHelper.insertTransaction(transactionData);
-
-                      if (!mounted) return;
-
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.add_card_outlined, color: Colors.green),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  "Approvisionner",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: amountController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                labelText: 'Montant à ajouter',
+                hintText: '0.00',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                prefixIcon: Icon(Icons.account_balance_wallet_outlined, color: Colors.grey[600]),
+                filled: true,
+                fillColor: Colors.grey[50],
+                suffixText: widget.account.currencySymbol,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
                       Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${_formatAmount(amount)} ${widget.account.currencySymbol} ajoutés avec succès.'),
-                          backgroundColor: Colors.green[700],
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                      Navigator.of(context).push(_slideTransition(VirementCompteScreen(fromAccount: widget.account)));
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: const Text('Virement Compte', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final amount = double.tryParse(amountController.text);
+                      if (amount != null && amount > 0) {
+                        // 1. Mettre à jour le solde du compte
+                        widget.account.balance += amount;
+                        await DbHelper.updateAccount(widget.account.toMap());
 
-                      // 3. Rafraîchir l'écran
-                      setState(() {});
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                  child: const Text('Ajouter'),
+                        // 2. Créer la transaction correspondante
+                        final transactionData = {
+                          DbHelper.MONTANT: amount,
+                          DbHelper.TRANSACTION_TYPE: 'income',
+                          DbHelper.TRANSACTION_DATE: DateTime.now().toIso8601String(),
+                          DbHelper.ACCOUNT_ID: widget.account.id,
+                          DbHelper.TRANSACTION_DESCRIPTION: 'Approvisionnement du compte',
+                        };
+                        await DbHelper.insertTransaction(transactionData);
+
+                        if (!mounted) return;
+
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${_formatAmount(amount)} ${widget.account.currencySymbol} ajoutés avec succès.'),
+                            backgroundColor: Colors.green[700],
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+
+                        // 3. Rafraîchir l'écran
+                        setState(() {});
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: const Text('Ajouter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 

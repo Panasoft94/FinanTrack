@@ -215,7 +215,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       margin: const EdgeInsets.all(16.0),
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.green.shade700,
+      color: Colors.green,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Row(

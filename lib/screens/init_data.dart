@@ -61,7 +61,7 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
     final accounts = await DbHelper.getAccounts();
     if (accounts.isEmpty) {
       await DbHelper.insertAccount({
-        'account_name': 'Compte defaut',
+        'account_name': 'Compte espèces',
         'account_balance': 0.00,
         'account_type': 'Espèces', // Type de compte harmonisé
         'account_icon': 'FCFA', // Ajout du symbole de la devise
