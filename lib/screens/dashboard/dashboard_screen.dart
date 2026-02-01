@@ -9,6 +9,7 @@ import 'package:budget/screens/notifications/notifications_screen.dart';
 import 'package:budget/screens/premium/premium_screen.dart';
 import 'package:budget/screens/settings/settings_screen.dart';
 import 'package:budget/screens/statistics/data_statistics_screen.dart';
+import 'package:budget/screens/statistics/monthly_statistics_screen.dart';
 import 'package:budget/screens/transactions/transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -66,6 +67,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: 'Transactions',
             onTap: () {
               Navigator.of(context).push(_slideTransition(const TransactionsScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
+            icon: Icons.calendar_month,
+            title: 'Dépenses mensuelles',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const MonthlyStatisticsScreen()));
             },
           ),
           const SizedBox(height: 16),

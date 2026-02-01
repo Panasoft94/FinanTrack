@@ -596,6 +596,20 @@ class DbHelper{
     return stats;
   }
 
+  static Future<List<Map<String, dynamic>>> getExpensesByMonth() async {
+    final dbClient = await getdb();
+    final String query = '''
+      SELECT 
+        strftime('%Y-%m', $TRANSACTION_DATE) as month, 
+        SUM($MONTANT) as total
+      FROM $TRANSACTION_TABLE
+      WHERE $TRANSACTION_TYPE = 'expense'
+      GROUP BY month
+      ORDER BY month DESC
+    ''';
+    return await dbClient!.rawQuery(query);
+  }
+
   // Opérations CRUD pour les notifications
   static Future<int> insertNotification(Map<String, dynamic> data) async {
     final dbClient = await getdb();
