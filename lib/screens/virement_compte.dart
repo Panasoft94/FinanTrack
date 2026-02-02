@@ -1,6 +1,7 @@
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class VirementCompteScreen extends StatefulWidget {
   final Account? fromAccount;
@@ -23,6 +24,17 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
     super.initState();
     _fromAccount = widget.fromAccount;
     _loadAccounts();
+  }
+
+  // Nouvelle fonction pour formater le montant avec séparateur de milliers et sans décimales si elles sont nulles
+  String _formatAmount(double amount) {
+    final formatter = NumberFormat.decimalPattern('fr_FR');
+    if (amount == amount.truncate()) {
+      return formatter.format(amount.truncate());
+    } else {
+      // Pour les cas avec décimales, on utilise deux décimales par défaut
+      return NumberFormat.currency(locale: 'fr_FR', symbol: '').format(amount);
+    }
   }
 
   Future<void> _loadAccounts() async {
@@ -135,7 +147,7 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
                       children: [
                         Text(account.name),
                         Text(
-                          '${account.balance.toStringAsFixed(2)} ${account.currencySymbol}',
+                          '${_formatAmount(account.balance)} ${account.currencySymbol}',
                           style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                         ),
                       ],
@@ -167,7 +179,7 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
                       children: [
                         Text(account.name),
                         Text(
-                          '${account.balance.toStringAsFixed(2)} ${account.currencySymbol}',
+                          '${_formatAmount(account.balance)} ${account.currencySymbol}',
                           style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                         ),
                       ],

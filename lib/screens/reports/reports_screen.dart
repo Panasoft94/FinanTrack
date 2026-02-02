@@ -39,11 +39,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   String _formatAmount(double amount) {
-    if (amount == amount.truncate()) {
-      return amount.truncate().toString();
-    } else {
-      return amount.toStringAsFixed(2);
-    }
+    // Utilisation de NumberFormat pour ajouter les séparateurs de milliers
+    // Le format 'fr_FR' utilise l'espace comme séparateur
+    final formatter = NumberFormat.decimalPattern('fr_FR');
+    return formatter.format(amount);
   }
 
   Color _getCategoryColor(String categoryName) {

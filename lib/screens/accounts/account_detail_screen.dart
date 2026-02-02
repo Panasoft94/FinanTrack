@@ -2,6 +2,7 @@ import 'package:budget/models/transactions_model.dart';
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:budget/screens/virement_compte.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import './accounts_screen.dart'; // Importer pour la classe Account
 
 class AccountDetailScreen extends StatefulWidget {
@@ -151,11 +152,10 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
   }
 
   String _formatAmount(double amount) {
-    if (amount == amount.truncate()) {
-      return amount.truncate().toString();
-    } else {
-      return amount.toStringAsFixed(2);
-    }
+    // Utilisation de NumberFormat pour ajouter les séparateurs de milliers
+    // Le format 'fr_FR' utilise l'espace comme séparateur
+    final formatter = NumberFormat.decimalPattern('fr_FR');
+    return formatter.format(amount);
   }
 
   PageRouteBuilder _slideTransition(Widget page) {

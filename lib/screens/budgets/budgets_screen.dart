@@ -286,11 +286,11 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             Row(
               children: [
                 const Text(
-                  'Restant Total:',
+                  'Restant :',
                   style: TextStyle(color: Colors.grey, fontSize: 15),
                 ),
                 const Spacer(),
-                Flexible(
+                Expanded( // Changé Flexible par Expanded pour garantir l'espace et empêcher le débordement
                   child: Text(
                     '${_formatAmount(remaining)} FCFA',
                     style: TextStyle(
