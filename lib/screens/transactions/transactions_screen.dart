@@ -37,10 +37,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   String _formatAmount(double amount) {
+    final formatter = NumberFormat.decimalPattern('fr_FR');
     if (amount == amount.truncate()) {
-      return amount.truncate().toString();
+      return formatter.format(amount.truncate());
     } else {
-      return amount.toStringAsFixed(2);
+      return NumberFormat('#,##0.00', 'fr_FR').format(amount);
     }
   }
 
@@ -360,10 +361,11 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
   }
 
   String _formatAmount(double amount) {
+    final formatter = NumberFormat.decimalPattern('fr_FR');
     if (amount == amount.truncate()) {
-      return amount.truncate().toString();
+      return formatter.format(amount.truncate());
     } else {
-      return amount.toStringAsFixed(2);
+      return NumberFormat('#,##0.00', 'fr_FR').format(amount);
     }
   }
 
