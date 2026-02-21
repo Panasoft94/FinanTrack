@@ -1,4 +1,5 @@
 import 'package:budget/screens/database/db_helper.dart';
+import 'package:budget/screens/statistics/monthly_transactions_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart' as pie;
@@ -21,8 +22,6 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
   }
 
   String _formatAmount(double amount) {
-    // Utilisation de NumberFormat pour ajouter les séparateurs de milliers
-    // Le format 'fr_FR' utilise l'espace comme séparateur
     final formatter = NumberFormat.decimalPattern('fr_FR');
     return formatter.format(amount);
   }
@@ -50,16 +49,16 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permet au BottomSheet d'utiliser toute la hauteur
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (context) {
-        return SingleChildScrollView( // Ajout de SingleChildScrollView pour le scrolling
+        return SingleChildScrollView(
           child: Container(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Conserve mainAxisSize.min
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: 40,
@@ -126,14 +125,14 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Alignement à gauche pour le titre
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Dépenses Totales',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             ),
-            const SizedBox(height: 10), // Séparateur vertical
-            Align( // Utiliser Align pour pousser le montant à droite
+            const SizedBox(height: 10),
+            Align(
               alignment: Alignment.centerRight,
               child: Text(
                 '${_formatAmount(total)} FCFA',
@@ -152,7 +151,7 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
       appBar: AppBar(
         title: const Text('Dépenses mensuelles'),
         centerTitle: true,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -198,8 +197,6 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
               ),
               Expanded(
                 child: ListView.builder(
-                  // Le padding en bas (16 + 56 + 16 (hauteur standard FAB + padding)) est ajouté
-                  // pour s'assurer que le dernier élément de la liste n'est pas caché par le FAB.
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
                   itemCount: _loadedData!.length,
                   itemBuilder: (context, index) {
@@ -211,46 +208,58 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
                       elevation: 3,
                       margin: const EdgeInsets.only(bottom: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Le mois en haut comme titre de bloc
-                            Text(
-                              _formatMonth(month),
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MonthlyTransactionsDetailScreen(
+                                month: month,
+                                monthName: _formatMonth(month),
+                              ),
                             ),
-                            const SizedBox(height: 16),
-                            // La ligne de détails
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatMonth(month),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.calendar_month, color: Colors.red, size: 30),
                                   ),
-                                  child: const Icon(Icons.calendar_month, color: Colors.red, size: 30),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: Text(
-                                    "Total des dépenses",
-                                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: Text(
+                                      "Total des dépenses",
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  "${_formatAmount(total)} FCFA",
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
+                                  Text(
+                                    "${_formatAmount(total)} FCFA",
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -265,7 +274,7 @@ class _MonthlyStatisticsScreenState extends State<MonthlyStatisticsScreen> {
         onPressed: _showPieChart,
         label: const Text('Graphique'),
         icon: const Icon(Icons.pie_chart),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
       ),
     );

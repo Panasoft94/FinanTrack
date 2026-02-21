@@ -610,6 +610,26 @@ class DbHelper{
     return await dbClient!.rawQuery(query);
   }
 
+  static Future<List<Map<String, dynamic>>> getExpensesByMonthDetail(String month) async {
+    final dbClient = await getdb();
+    final String query = '''
+      SELECT 
+        t.*,
+        a.$ACCOUNT_NAME,
+        a.$ACCOUNT_ICON,
+        c.$CATEGORY_NAME,
+        c.$CATEGORY_ICON,
+        c.$CATEGORY_COLOR
+      FROM $TRANSACTION_TABLE t
+      LEFT JOIN $ACCOUNTS_TABLE a ON t.$ACCOUNT_ID = a.$ACCOUNT_ID
+      LEFT JOIN $CATEGORIES_TABLE c ON t.$CATEGORY_ID = c.$CATEGORY_ID
+      WHERE strftime('%Y-%m', t.$TRANSACTION_DATE) = ? 
+        AND t.$TRANSACTION_TYPE = 'expense'
+      ORDER BY t.$TRANSACTION_DATE DESC
+    ''';
+    return await dbClient!.rawQuery(query, [month]);
+  }
+
   // Opérations CRUD pour les notifications
   static Future<int> insertNotification(Map<String, dynamic> data) async {
     final dbClient = await getdb();
