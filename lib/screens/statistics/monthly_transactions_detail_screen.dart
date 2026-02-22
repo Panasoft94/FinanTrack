@@ -1,6 +1,9 @@
 import 'package:budget/screens/database/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class MonthlyTransactionsDetailScreen extends StatefulWidget {
   final String month;
@@ -18,6 +21,7 @@ class MonthlyTransactionsDetailScreen extends StatefulWidget {
 
 class _MonthlyTransactionsDetailScreenState extends State<MonthlyTransactionsDetailScreen> {
   late Future<List<Map<String, dynamic>>> _expensesFuture;
+  List<Map<String, dynamic>>? _snapshotData;
 
   static final List<IconData> availableIcons = [
     Icons.shopping_cart, Icons.fastfood, Icons.directions_car, Icons.movie,
@@ -94,6 +98,82 @@ class _MonthlyTransactionsDetailScreenState extends State<MonthlyTransactionsDet
     }
   }
 
+  Future<void> _exportToPdf() async {
+    if (_snapshotData == null || _snapshotData!.isEmpty) return;
+
+    final pdf = pw.Document();
+    final double totalExpense = _snapshotData!.fold(0.0, (sum, item) => sum + (item[DbHelper.MONTANT] as num).toDouble());
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        footer: (pw.Context context) {
+          return pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Rapport des dépenses mensuelles - ${widget.monthName}',
+                style: pw.TextStyle(color: PdfColors.grey, fontStyle: pw.FontStyle.italic, fontSize: 10),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} sur ${context.pagesCount}',
+                style: pw.TextStyle(color: PdfColors.grey, fontSize: 10),
+              ),
+            ],
+          );
+        },
+        build: (pw.Context context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('FinanTrack - Rapport Mensuel', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+                pw.Text(DateFormat('d MMM yyyy', 'fr_FR').format(DateTime.now()), style: const pw.TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Text('Détail des dépenses pour : ${widget.monthName}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Divider(height: 20, thickness: 1, color: PdfColors.grey300),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.end,
+            children: [
+              pw.Text('Total du mois : ', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.Text('${_formatAmount(totalExpense)} FCFA', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+            ],
+          ),
+          pw.SizedBox(height: 20),
+          pw.Table.fromTextArray(
+            headers: ['Date', 'Description', 'Catégorie', 'Compte', 'Montant'],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.red700),
+            cellAlignment: pw.Alignment.centerLeft,
+            cellAlignments: {
+              4: pw.Alignment.centerRight,
+            },
+            data: _snapshotData!.map((t) {
+              final date = t[DbHelper.TRANSACTION_DATE].toString();
+              final formattedDate = DateFormat('dd/MM/yyyy').format(DateTime.parse(date));
+              return [
+                formattedDate,
+                t[DbHelper.TRANSACTION_DESCRIPTION] ?? 'N/A',
+                t[DbHelper.CATEGORY_NAME] ?? 'N/A',
+                t[DbHelper.ACCOUNT_NAME] ?? 'N/A',
+                '${_formatAmount((t[DbHelper.MONTANT] as num).toDouble())} FCFA',
+              ];
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'Depenses_${widget.monthName.replaceAll(' ', '_')}.pdf',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,11 +208,12 @@ class _MonthlyTransactionsDetailScreenState extends State<MonthlyTransactionsDet
             );
           }
 
-          final groupedExpenses = _groupExpensesByDate(snapshot.data!);
+          _snapshotData = snapshot.data!;
+          final groupedExpenses = _groupExpensesByDate(_snapshotData!);
           final sortedDates = groupedExpenses.keys.toList()..sort((a, b) => b.compareTo(a));
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             itemCount: sortedDates.length,
             itemBuilder: (context, index) {
               String date = sortedDates[index];
@@ -246,6 +327,13 @@ class _MonthlyTransactionsDetailScreenState extends State<MonthlyTransactionsDet
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _exportToPdf,
+        label: const Text('Exporter PDF'),
+        icon: const Icon(Icons.picture_as_pdf),
+        backgroundColor: Colors.red.shade700,
+        foregroundColor: Colors.white,
       ),
     );
   }
