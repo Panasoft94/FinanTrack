@@ -190,7 +190,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 ),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 80), // Ajout de l'espacement en bas
                     itemCount: accounts.length,
                     itemBuilder: (context, index) => _buildAccountCard(accounts[index]),
                   ),
