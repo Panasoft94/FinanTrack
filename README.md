@@ -10,6 +10,7 @@
 - 💰 **Gestion multi-comptes** : espèces, banque, mobile money, etc.
 - 🧾 **Transactions catégorisées** : avec pièces jointes, notes et récurrence
 - 🎯 **Budgets par catégorie** : suivi visuel et alertes de dépassement
+- 📂 **Gestion des documents** : associez des reçus, factures et autres justificatifs à vos transactions.
 - 📅 **Calendrier financier** : rappels de paiements et vue mensuelle
 - 📈 **Statistiques et rapports** : graphiques dynamiques, filtres, export CSV/PDF
 - 👨‍👩‍👧‍👦 **Multi-utilisateur local** : profils familiaux avec rôles et permissions
