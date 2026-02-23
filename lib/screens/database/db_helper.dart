@@ -1,5 +1,4 @@
-
-import 'dart:io'; //on utilise le fichier
+import 'dart:io';
 import 'package:budget/screens/accounts/accounts_screen.dart';
 import 'package:budget/screens/config/base_config_screen.dart';
 import 'package:budget/screens/devises/devises_screen.dart';
@@ -47,7 +46,7 @@ class DbHelper{
   static const String NOTIFICATION_CONTENU = 'notification_contenu';
   static const String NOTIFICATION_DATE = 'notification_date';
   static const String NOTIFICATION_IS_READ = 'is_read';
-  static const String NOTIFICATION_TYPE = 'notification_type'; // new
+  static const String NOTIFICATION_TYPE = 'notification_type';
 
   static const String TRANSACTION_TABLE = 'transactions';
   static const String TRANSACTION_ID = 'transaction_id';
@@ -85,6 +84,17 @@ class DbHelper{
   static const String BUDGET_UPDATED_AT = 'budget_updated_at';
   static const String BUDGET_STATUS = 'budget_status';
 
+  // Tables pour les documents
+  static const String DOCUMENTS_TABLE = 'documents';
+  static const String DOCUMENT_ID = 'document_id';
+  static const String DOCUMENT_NAME = 'document_name';
+  static const String DOCUMENT_PATH = 'document_path';
+  static const String DOCUMENT_TYPE = 'document_type';
+  static const String DOCUMENT_CREATED_AT = 'document_created_at';
+  // Note: transaction_id et id (pour catégorie) sont ajoutés directement dans la table selon la demande
+
+  static const String TRANSACTION_DOCUMENTS_TABLE = 'transaction_documents';
+
 
   static Future<Database?>getdb() async{
     if(_db != null){
@@ -94,10 +104,9 @@ class DbHelper{
     return _db!;
   }
 
-  //recherche de la base de données
   static Future<Database?> _initDb() async{
     String path = join(await getDatabasesPath(),'finantrack.db');
-    return await openDatabase(path,version: 3, // new version
+    return await openDatabase(path,version: 5, // Increment version for corrected documents table
         onCreate: (Database db,int version) async{
           await db.execute("CREATE TABLE $ACCOUNTS_TABLE($ACCOUNT_ID INTEGER PRIMARY KEY AUTOINCREMENT,$ACCOUNT_NAME TEXT,$ACCOUNT_TYPE TEXT,$ACCOUNT_BALANCE REAL,$ACCOUNT_ICON TEXT,$ACCOUNT_CREATED_AT TEXT,$ACCOUNT_UPDATED_AT TEXT)");
           await db.execute("CREATE TABLE $CATEGORIES_TABLE($CATEGORY_ID INTEGER PRIMARY KEY AUTOINCREMENT, $CATEGORY_NAME TEXT NOT NULL,$CATEGORY_TYPE TEXT NOT NULL,$CATEGORY_ICON TEXT,$CATEGORY_COLOR TEXT NOT NULL DEFAULT '#007AFF')");
@@ -120,13 +129,45 @@ class DbHelper{
           await db.execute("CREATE TABLE $USERS_TABLE($USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,$USER_NAME TEXT,$USER_EMAIL TEXT,$USER_PASSWORD TEXT,$USER_PIN INTEGER,$USER_PHONE TEXT,$USER_ROLE TEXT,$USER_STATUS INTEGER,$USER_CREATED_AT TEXT,$USER_UPDATED_AT TEXT,$ACEPT_LICENCE INTEGER)");
           await db.execute("CREATE TABLE $CONFIG_TABLE($CONFIG_ID INTEGER PRIMARY KEY AUTOINCREMENT,$APP_NAME TEXT,$DEFAULT_LANGUAGE TEXT,$DEFAULT_YEAR INTEGER,$SELECTED_DEVISE_ID TEXT)");
           await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT, $NOTIFICATION_IS_READ INTEGER DEFAULT 0, $NOTIFICATION_TYPE TEXT)");
+          
+          // Création des tables de documents avec la structure demandée
+          await db.execute("""CREATE TABLE $DOCUMENTS_TABLE(
+            $DOCUMENT_ID INTEGER PRIMARY KEY AUTOINCREMENT, 
+            $DOCUMENT_NAME TEXT, 
+            $DOCUMENT_PATH TEXT, 
+            $DOCUMENT_TYPE TEXT, 
+            $DOCUMENT_CREATED_AT TEXT,
+            $TRANSACTION_ID INTEGER,
+            $CATEGORY_ID INTEGER,
+            FOREIGN KEY ($TRANSACTION_ID) REFERENCES $TRANSACTION_TABLE ($TRANSACTION_ID) ON DELETE SET NULL,
+            FOREIGN KEY ($CATEGORY_ID) REFERENCES $CATEGORIES_TABLE ($CATEGORY_ID) ON DELETE SET NULL
+          )""");
+          
+          await db.execute("CREATE TABLE $TRANSACTION_DOCUMENTS_TABLE($TRANSACTION_ID INTEGER, $DOCUMENT_ID INTEGER, PRIMARY KEY ($TRANSACTION_ID, $DOCUMENT_ID), FOREIGN KEY ($TRANSACTION_ID) REFERENCES $TRANSACTION_TABLE ($TRANSACTION_ID) ON DELETE CASCADE, FOREIGN KEY ($DOCUMENT_ID) REFERENCES $DOCUMENTS_TABLE ($DOCUMENT_ID) ON DELETE CASCADE)");
         },
         onUpgrade: (Database db, int oldVersion, int newVersion) async {
            if (oldVersion < 2) {
-            // Drop the old table and recreate it.
             await db.execute("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS");
             await db.execute("CREATE TABLE $TABLE_NOTIFICATIONS($NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,$NOTIFICATION_TITRE TEXT,$NOTIFICATION_CONTENU TEXT,$NOTIFICATION_DATE TEXT, $NOTIFICATION_IS_READ INTEGER DEFAULT 0, $NOTIFICATION_TYPE TEXT)");
           }
+           if (oldVersion < 4) {
+             // Fallback for version 4 addition (if already deployed)
+             await db.execute("CREATE TABLE IF NOT EXISTS $DOCUMENTS_TABLE($DOCUMENT_ID INTEGER PRIMARY KEY AUTOINCREMENT, $DOCUMENT_NAME TEXT, $DOCUMENT_PATH TEXT, $DOCUMENT_TYPE TEXT, $DOCUMENT_CREATED_AT TEXT)");
+             await db.execute("CREATE TABLE IF NOT EXISTS $TRANSACTION_DOCUMENTS_TABLE($TRANSACTION_ID INTEGER, $DOCUMENT_ID INTEGER, PRIMARY KEY ($TRANSACTION_ID, $DOCUMENT_ID), FOREIGN KEY ($TRANSACTION_ID) REFERENCES $TRANSACTION_TABLE ($TRANSACTION_ID) ON DELETE CASCADE, FOREIGN KEY ($DOCUMENT_ID) REFERENCES $DOCUMENTS_TABLE ($DOCUMENT_ID) ON DELETE CASCADE)");
+           }
+           if (oldVersion < 5) {
+             // Migration pour ajouter transaction_id et id (CATEGORY_ID) si la table existe déjà sans eux
+             var tableInfo = await db.rawQuery("PRAGMA table_info($DOCUMENTS_TABLE)");
+             bool hasTransId = tableInfo.any((column) => column['name'] == TRANSACTION_ID);
+             bool hasCatId = tableInfo.any((column) => column['name'] == CATEGORY_ID);
+             
+             if (!hasTransId) {
+               await db.execute("ALTER TABLE $DOCUMENTS_TABLE ADD COLUMN $TRANSACTION_ID INTEGER");
+             }
+             if (!hasCatId) {
+               await db.execute("ALTER TABLE $DOCUMENTS_TABLE ADD COLUMN $CATEGORY_ID INTEGER");
+             }
+           }
         });
   }
 
@@ -240,7 +281,7 @@ class DbHelper{
 
   deleteDB() async{
     try{
-      String path = join(await getDatabasesPath(), 'tontine.db');
+      String path = join(await getDatabasesPath(), 'finantrack.db');
       await databaseExists(path).then((exists) async {
         if (exists) {
           await deleteDatabase(path);
@@ -259,7 +300,6 @@ class DbHelper{
 //recherche du chemin de la base de données
   getDbPath() async{
     String databasePath = await getDatabasesPath();//on récupère le chemin de la base de données
-    // Directory? externalStoragePath = await getExternalStorageDirectory(); // This line seems unused
     print("Database path: $databasePath");
     return databasePath;
   }
@@ -267,7 +307,6 @@ class DbHelper{
 // Opérations CRUD pour la table des comptes (Accounts)
   static Future<int> insertAccount(Map<String, dynamic> data) async {
     final dbClient = await getdb();
-    // Ajoute la date de création avant l'insertion
     data[ACCOUNT_CREATED_AT] = DateTime.now().toIso8601String();
     return await dbClient!.insert(ACCOUNTS_TABLE, data);
   }
@@ -283,7 +322,6 @@ class DbHelper{
   static Future<int> updateAccount(Map<String, dynamic> data) async {
     final dbClient = await getdb();
     final int accountId = data[ACCOUNT_ID];
-    // La date de mise à jour est déjà dans le .toMap() du modèle
     return await dbClient!.update(ACCOUNTS_TABLE, data, where: '$ACCOUNT_ID = ?', whereArgs: [accountId]);
   }
 
@@ -452,6 +490,24 @@ class DbHelper{
     return await dbClient!.rawQuery(query, [accountId]);
   }
 
+  static Future<List<Map<String, dynamic>>> getTransactionsByCategory(int categoryId) async {
+    final dbClient = await getdb();
+    final String query = '''
+      SELECT 
+        t.*,
+        a.$ACCOUNT_NAME,
+        c.$CATEGORY_NAME,
+        c.$CATEGORY_ICON,
+        c.$CATEGORY_COLOR
+      FROM $TRANSACTION_TABLE t
+      LEFT JOIN $ACCOUNTS_TABLE a ON t.$ACCOUNT_ID = a.$ACCOUNT_ID
+      LEFT JOIN $CATEGORIES_TABLE c ON t.$CATEGORY_ID = c.$CATEGORY_ID
+      WHERE t.$CATEGORY_ID = ?
+      ORDER BY t.$TRANSACTION_DATE DESC
+    ''';
+    return await dbClient!.rawQuery(query, [categoryId]);
+  }
+
   static Future<List<Map<String, dynamic>>> getTransactionsForBudget(int categoryId, String startDate, String endDate) async {
     final dbClient = await getdb();
     final String query = '''
@@ -559,19 +615,15 @@ class DbHelper{
     final dbClient = await getdb();
     Map<String, dynamic> stats = {};
 
-    // Total des comptes et solde total
     var accountSummary = await dbClient!.rawQuery("SELECT COUNT(*) as count, SUM($ACCOUNT_BALANCE) as total FROM $ACCOUNTS_TABLE");
     stats['accountsCount'] = Sqflite.firstIntValue(accountSummary) ?? 0;
     stats['totalBalance'] = (accountSummary.first['total'] as double?) ?? 0.0;
     
-    // Liste des comptes individuels
     stats['accountsList'] = await dbClient.query(ACCOUNTS_TABLE, orderBy: '$ACCOUNT_NAME ASC');
 
-    // Nombre de transactions et de budgets actifs
     stats['transactionsCount'] = Sqflite.firstIntValue(await dbClient.rawQuery("SELECT COUNT(*) FROM $TRANSACTION_TABLE")) ?? 0;
     stats['activeBudgetsCount'] = Sqflite.firstIntValue(await dbClient.rawQuery("SELECT COUNT(*) FROM $BUDGET_TABLE WHERE $BUDGET_STATUS = 1")) ?? 0;
 
-    // Dépenses par catégorie
     final List<Map<String, dynamic>> expenses = await dbClient.rawQuery('''
       SELECT c.$CATEGORY_NAME as name, SUM(t.$MONTANT) as total
       FROM $TRANSACTION_TABLE t
@@ -582,7 +634,6 @@ class DbHelper{
     
     stats['expensesByCategory'] = expenses;
     
-    // Tendance des dépenses (30 derniers jours)
     final String thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
     final List<Map<String, dynamic>> expenseTrend = await dbClient.rawQuery('''
       SELECT date($TRANSACTION_DATE) as day, SUM($MONTANT) as total
@@ -660,6 +711,50 @@ class DbHelper{
   static Future<int> clearAllNotifications() async {
     final dbClient = await getdb();
     return await dbClient!.delete(TABLE_NOTIFICATIONS);
+  }
+
+  // Opérations CRUD pour les documents
+  static Future<int> insertDocument(Map<String, dynamic> docData, List<int> transactionIds) async {
+    final dbClient = await getdb();
+    return await dbClient!.transaction((txn) async {
+      docData[DOCUMENT_CREATED_AT] = DateTime.now().toIso8601String();
+      // On insère aussi les références transaction_id et category_id dans docData si présentes
+      final docId = await txn.insert(DOCUMENTS_TABLE, docData);
+      
+      for (var tId in transactionIds) {
+        await txn.insert(TRANSACTION_DOCUMENTS_TABLE, {
+          TRANSACTION_ID: tId,
+          DOCUMENT_ID: docId,
+        });
+      }
+      return docId;
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> getDocumentsWithTransactions() async {
+    final dbClient = await getdb();
+    final List<Map<String, dynamic>> docs = await dbClient!.query(DOCUMENTS_TABLE, orderBy: '$DOCUMENT_CREATED_AT DESC');
+    
+    List<Map<String, dynamic>> results = [];
+    for (var doc in docs) {
+      final List<Map<String, dynamic>> transactions = await dbClient.rawQuery('''
+        SELECT t.*, c.$CATEGORY_NAME
+        FROM $TRANSACTION_TABLE t
+        JOIN $TRANSACTION_DOCUMENTS_TABLE td ON t.$TRANSACTION_ID = td.$TRANSACTION_ID
+        LEFT JOIN $CATEGORIES_TABLE c ON t.$CATEGORY_ID = c.$CATEGORY_ID
+        WHERE td.$DOCUMENT_ID = ?
+      ''', [doc[DOCUMENT_ID]]);
+      
+      Map<String, dynamic> docWithTrans = Map<String, dynamic>.from(doc);
+      docWithTrans['transactions'] = transactions;
+      results.add(docWithTrans);
+    }
+    return results;
+  }
+
+  static Future<int> deleteDocument(int docId) async {
+    final dbClient = await getdb();
+    return await dbClient!.delete(DOCUMENTS_TABLE, where: '$DOCUMENT_ID = ?', whereArgs: [docId]);
   }
 
 }

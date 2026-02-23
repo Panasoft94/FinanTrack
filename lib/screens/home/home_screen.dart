@@ -1,5 +1,6 @@
 import 'package:budget/screens/budgets/budgets_screen.dart';
 import 'package:budget/screens/dashboard/dashboard_screen.dart';
+import 'package:budget/screens/documents/documents_screen.dart';
 import 'package:budget/screens/reports/reports_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -42,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
@@ -49,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
             Tab(icon: Icon(Icons.pie_chart), text: 'Budgets'),
             Tab(icon: Icon(Icons.bar_chart), text: 'Rapports'),
+            Tab(icon: Icon(Icons.file_copy), text: 'Documents'),
           ],
         ),
       ),
@@ -58,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           DashboardScreen(),
           BudgetsScreen(),
           ReportsScreen(),
+          DocumentsScreen(),
         ],
       ),
     );
