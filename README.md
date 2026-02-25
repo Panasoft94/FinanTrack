@@ -8,7 +8,8 @@
 
 - 📊 **Tableau de bord interactif** : vue synthétique du solde, des dépenses et revenus
 - 💰 **Gestion multi-comptes** : espèces, banque, mobile money, etc.
-- 🧾 **Transactions catégorisées** : avec pièces jointes, notes et récurrence
+- 🧾 **Transactions catégorisées** : avec pièces jointes, notes et récurrence.
+- 💡 **Saisie Intelligente** : dictionnaire de descriptions avec autocomplétion animée pour accélérer la saisie des transactions.
 - 🎯 **Budgets par catégorie** : suivi visuel et alertes de dépassement
 - 📂 **Gestion des documents** : associez des reçus, factures et autres justificatifs à vos transactions.
 - 📅 **Calendrier financier** : rappels de paiements et vue mensuelle

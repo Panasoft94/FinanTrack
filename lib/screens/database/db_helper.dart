@@ -95,6 +95,10 @@ class DbHelper{
 
   static const String TRANSACTION_DOCUMENTS_TABLE = 'transaction_documents';
 
+  static const String DICTIONNAIRE_TABLE = 'dictionnaires';
+  static const String DICTIONNAIRE_ID = 'id';
+  static const String DICTIONNAIRE_LIBELLE = 'libelle';
+
 
   static Future<Database?>getdb() async{
     if(_db != null){
@@ -106,7 +110,7 @@ class DbHelper{
 
   static Future<Database?> _initDb() async{
     String path = join(await getDatabasesPath(),'finantrack.db');
-    return await openDatabase(path,version: 5, // Increment version for corrected documents table
+    return await openDatabase(path,version: 6, // Increment version for dictionaries table
         onCreate: (Database db,int version) async{
           await db.execute("CREATE TABLE $ACCOUNTS_TABLE($ACCOUNT_ID INTEGER PRIMARY KEY AUTOINCREMENT,$ACCOUNT_NAME TEXT,$ACCOUNT_TYPE TEXT,$ACCOUNT_BALANCE REAL,$ACCOUNT_ICON TEXT,$ACCOUNT_CREATED_AT TEXT,$ACCOUNT_UPDATED_AT TEXT)");
           await db.execute("CREATE TABLE $CATEGORIES_TABLE($CATEGORY_ID INTEGER PRIMARY KEY AUTOINCREMENT, $CATEGORY_NAME TEXT NOT NULL,$CATEGORY_TYPE TEXT NOT NULL,$CATEGORY_ICON TEXT,$CATEGORY_COLOR TEXT NOT NULL DEFAULT '#007AFF')");
@@ -144,6 +148,7 @@ class DbHelper{
           )""");
           
           await db.execute("CREATE TABLE $TRANSACTION_DOCUMENTS_TABLE($TRANSACTION_ID INTEGER, $DOCUMENT_ID INTEGER, PRIMARY KEY ($TRANSACTION_ID, $DOCUMENT_ID), FOREIGN KEY ($TRANSACTION_ID) REFERENCES $TRANSACTION_TABLE ($TRANSACTION_ID) ON DELETE CASCADE, FOREIGN KEY ($DOCUMENT_ID) REFERENCES $DOCUMENTS_TABLE ($DOCUMENT_ID) ON DELETE CASCADE)");
+          await db.execute("CREATE TABLE $DICTIONNAIRE_TABLE($DICTIONNAIRE_ID INTEGER PRIMARY KEY AUTOINCREMENT, $DICTIONNAIRE_LIBELLE TEXT UNIQUE)");
         },
         onUpgrade: (Database db, int oldVersion, int newVersion) async {
            if (oldVersion < 2) {
@@ -167,6 +172,9 @@ class DbHelper{
              if (!hasCatId) {
                await db.execute("ALTER TABLE $DOCUMENTS_TABLE ADD COLUMN $CATEGORY_ID INTEGER");
              }
+           }
+           if (oldVersion < 6) {
+             await db.execute("CREATE TABLE IF NOT EXISTS $DICTIONNAIRE_TABLE($DICTIONNAIRE_ID INTEGER PRIMARY KEY AUTOINCREMENT, $DICTIONNAIRE_LIBELLE TEXT UNIQUE)");
            }
         });
   }
@@ -757,4 +765,45 @@ class DbHelper{
     return await dbClient!.delete(DOCUMENTS_TABLE, where: '$DOCUMENT_ID = ?', whereArgs: [docId]);
   }
 
+  // Opérations pour le dictionnaire de descriptions
+  static Future<int> insertIntoDictionnaire(String libelle) async {
+    if (libelle.isEmpty) return -1;
+    final dbClient = await getdb();
+    // Utiliser insert avec conflictAlgorithm pour éviter les doublons si UNIQUE n'est pas suffisant (mais UNIQUE gère ça)
+    return await dbClient!.insert(
+      DICTIONNAIRE_TABLE,
+      {DICTIONNAIRE_LIBELLE: libelle},
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  static Future<List<String>> getDictionnaireSuggestions(String query) async {
+    final dbClient = await getdb();
+    if (query.isEmpty) {
+       final List<Map<String, dynamic>> maps = await dbClient!.query(
+        DICTIONNAIRE_TABLE,
+        columns: [DICTIONNAIRE_LIBELLE],
+        orderBy: '$DICTIONNAIRE_ID DESC',
+        limit: 10,
+      );
+      return List.generate(maps.length, (i) => maps[i][DICTIONNAIRE_LIBELLE]);
+    }
+    final List<Map<String, dynamic>> maps = await dbClient!.query(
+      DICTIONNAIRE_TABLE,
+      columns: [DICTIONNAIRE_LIBELLE],
+      where: '$DICTIONNAIRE_LIBELLE LIKE ?',
+      whereArgs: ['%$query%'],
+      limit: 10,
+    );
+    return List.generate(maps.length, (i) => maps[i][DICTIONNAIRE_LIBELLE]);
+  }
+
+  static Future<List<String>> getAllDictionnaireSuggestions() async {
+    final dbClient = await getdb();
+    final List<Map<String, dynamic>> maps = await dbClient!.query(
+      DICTIONNAIRE_TABLE,
+      columns: [DICTIONNAIRE_LIBELLE],
+    );
+    return List.generate(maps.length, (i) => maps[i][DICTIONNAIRE_LIBELLE]);
+  }
 }

@@ -57,7 +57,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           Navigator.of(context).pop(); // Ferme le BottomSheet
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(transaction != null ? 'Transaction modifiée avec succès.' : 'Transaction ajoutée avec succès.'),
+              content: Text(transaction != null ? 'Transaction modifiée avec succès.' : 'Transaction effectuée avec succès.'),
               backgroundColor: Colors.green[700],
               behavior: SnackBarBehavior.floating,
             ),
@@ -415,6 +415,11 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
     await DbHelper.updateAccount(account.toMap());
     // --- FIN DE LA LOGIQUE ---
 
+    final description = _descriptionController.text;
+    if (description.isNotEmpty) {
+      await DbHelper.insertIntoDictionnaire(description);
+    }
+
     final data = {
       DbHelper.TRANSACTION_ID: widget.transaction?.id,
       DbHelper.MONTANT: amount,
@@ -458,7 +463,97 @@ class _AddOrEditTransactionFormState extends State<_AddOrEditTransactionForm> {
               const SizedBox(height: 20),
               TextFormField(controller: _amountController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Montant', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
               const SizedBox(height: 15),
-              TextFormField(controller: _descriptionController, decoration: InputDecoration(labelText: 'Description (optionnel)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) async {
+                  if (textEditingValue.text == '') {
+                    return const Iterable<String>.empty();
+                  }
+                  return await DbHelper.getDictionnaireSuggestions(textEditingValue.text);
+                },
+                onSelected: (String selection) {
+                  _descriptionController.text = selection;
+                },
+                fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
+                  // Synchroniser _descriptionController avec le contrôleur d'Autocomplete
+                  if (fieldTextEditingController.text != _descriptionController.text) {
+                    fieldTextEditingController.text = _descriptionController.text;
+                  }
+
+                  fieldTextEditingController.addListener(() {
+                    _descriptionController.text = fieldTextEditingController.text;
+                  });
+
+                  return TextFormField(
+                    controller: fieldTextEditingController,
+                    focusNode: fieldFocusNode,
+                    decoration: InputDecoration(
+                      labelText: 'Description (optionnel)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onFieldSubmitted: (String value) {
+                      onFieldSubmitted();
+                    },
+                  );
+                },
+                optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 6.0,
+                      color: Colors.transparent,
+                      child: TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 250),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, (1 - value) * -10),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: MediaQuery.of(context).size.width - 40,
+                          margin: const EdgeInsets.only(top: 5),
+                          constraints: const BoxConstraints(maxHeight: 250),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.green.withOpacity(0.2)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[100]),
+                              itemBuilder: (BuildContext context, int index) {
+                                final String option = options.elementAt(index);
+                                return ListTile(
+                                  dense: true,
+                                  leading: const Icon(Icons.history, size: 20, color: Colors.green),
+                                  title: Text(option, style: const TextStyle(fontWeight: FontWeight.w500)),
+                                  onTap: () => onSelected(option),
+                                  hoverColor: Colors.green.withOpacity(0.05),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 15),
               FutureBuilder<List<Account>>(
                 future: _accountsFuture,
