@@ -806,4 +806,24 @@ class DbHelper{
     );
     return List.generate(maps.length, (i) => maps[i][DICTIONNAIRE_LIBELLE]);
   }
+
+  static Future<List<Map<String, dynamic>>> getDictionnaireEntries() async {
+    final dbClient = await getdb();
+    return await dbClient!.query(DICTIONNAIRE_TABLE, orderBy: '$DICTIONNAIRE_ID DESC');
+  }
+
+  static Future<int> updateDictionnaire(int id, String libelle) async {
+    final dbClient = await getdb();
+    return await dbClient!.update(
+      DICTIONNAIRE_TABLE,
+      {DICTIONNAIRE_LIBELLE: libelle},
+      where: '$DICTIONNAIRE_ID = ?',
+      whereArgs: [id],
+    );
+  }
+
+  static Future<int> deleteDictionnaire(int id) async {
+    final dbClient = await getdb();
+    return await dbClient!.delete(DICTIONNAIRE_TABLE, where: '$DICTIONNAIRE_ID = ?', whereArgs: [id]);
+  }
 }

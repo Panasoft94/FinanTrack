@@ -3,6 +3,7 @@ import 'package:budget/screens/database/reset_database_screen.dart';
 import 'package:budget/screens/database/restore_database_screen.dart';
 import 'package:budget/screens/database/save_database_screen.dart';
 import 'package:budget/screens/devises/devises_screen.dart';
+import 'package:budget/screens/dictionnaire/dictionnaire_screen.dart';
 import 'package:budget/screens/user_account/user_account_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -49,9 +50,18 @@ class SettingsScreen extends StatelessWidget {
           _buildDashboardTile(
             context,
             icon: Icons.account_circle,
-            title: 'Gérer le compte utilisateur',
+            title: 'Gérer votre compte',
             onTap: () {
               Navigator.of(context).push(_slideTransition(const UserAccountScreen()));
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDashboardTile(
+            context,
+            icon: Icons.book,
+            title: 'Dictionnaire',
+            onTap: () {
+              Navigator.of(context).push(_slideTransition(const DictionnaireScreen()));
             },
           ),
           const SizedBox(height: 16),
