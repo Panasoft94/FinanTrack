@@ -15,15 +15,15 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
   late Future<Map<String, dynamic>> _statsFuture;
 
   final List<Color> _colorList = const [
-    Color(0xFF8A2BE2), // BlueViolet
-    Color(0xFF00BFFF), // DeepSkyBlue
-    Color(0xFF7FFFD4), // Aquamarine
-    Color(0xFF3CB371), // MediumSeaGreen
-    Color(0xFFFDD835), // Vivid Yellow
-    Color(0xFFFFB74D), // Light Orange
-    Color(0xFFFF7043), // Vivid Orange
-    Color(0xFFEC407A), // Vivid Pink
-    Color(0xFF7E57C2), // Deep Purple
+    Color(0xFF6366F1), // Indigo
+    Color(0xFF0EA5E9), // Sky Blue
+    Color(0xFF10B981), // Emerald
+    Color(0xFFF59E0B), // Amber
+    Color(0xFFEF4444), // Red
+    Color(0xFF8B5CF6), // Violet
+    Color(0xFFEC4899), // Pink
+    Color(0xFF06B6D4), // Cyan
+    Color(0xFFF43F5E), // Rose
   ];
 
   @override
@@ -33,8 +33,6 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
   }
 
   String _formatAmount(double amount) {
-    // Utilisation de NumberFormat pour ajouter les séparateurs de milliers
-    // Le format 'fr_FR' utilise l'espace comme séparateur
     final formatter = NumberFormat.decimalPattern('fr_FR');
     return formatter.format(amount);
   }
@@ -47,19 +45,19 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [Icon(Icons.analytics), SizedBox(width: 8), Text('Statistiques')]),
+        title: const Text('Analyses & Statistiques', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _statsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.green));
           }
           if (snapshot.hasError) {
             return Center(child: Text("Erreur: ${snapshot.error}"));
@@ -78,13 +76,12 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
           }
 
           final sortedEntries = expenseData.entries.toList()
-            ..sort((a, b) => a.value.compareTo(b.value));
+            ..sort((a, b) => b.value.compareTo(a.value)); // Tri décroissant pour la pertinence
           final sortedExpenseData = Map<String, double>.fromEntries(sortedEntries);
           final double totalExpense = expenseData.values.fold(0.0, (sum, item) => sum + item);
 
           final chartColorList = sortedExpenseData.keys.map((name) => _getCategoryColor(name)).toList();
 
-          // --- Préparation des données pour le graphique de tendance ---
           final List<FlSpot> expenseTrendSpots = [];
           final trendData = (stats['expenseTrend'] as List<dynamic>?) ?? [];
           final Map<String, double> dailyTotalsFromDb = {
@@ -97,81 +94,28 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
             final total = dailyTotalsFromDb[dateString] ?? 0.0;
             expenseTrendSpots.add(FlSpot(i.toDouble(), total));
           }
-          // --- Fin de la préparation ---
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildSectionTitle("Résumé des comptes"),
                 _buildAccountsSummaryCard(accounts),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+                _buildSectionTitle("Indicateurs clés"),
                 _buildStatsGrid(stats),
-                const SizedBox(height: 30),
-                if (sortedExpenseData.isNotEmpty)
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Text("Dépenses par catégorie", style: Theme.of(context).textTheme.titleLarge),
-                          const SizedBox(height: 20),
-                          pie.PieChart(
-                            dataMap: sortedExpenseData,
-                            chartRadius: MediaQuery.of(context).size.width / 2.5,
-                            legendOptions: const pie.LegendOptions(showLegends: false),
-                            chartValuesOptions: const pie.ChartValuesOptions(showChartValuesInPercentage: true, decimalPlaces: 1),
-                            colorList: chartColorList,
-                          ),
-                          const SizedBox(height: 20),
-                          _buildCustomLegend(sortedExpenseData, totalExpense),
-                        ],
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 30),
-                if (expenseTrendSpots.isNotEmpty)
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Text("Tendance des dépenses (30j)", style: Theme.of(context).textTheme.titleLarge),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            height: 200,
-                            child: LineChart(
-                              LineChartData(
-                                gridData: const FlGridData(show: false),
-                                titlesData: const FlTitlesData(show: false),
-                                borderData: FlBorderData(show: false),
-                                lineBarsData: [
-                                  LineChartBarData(
-                                    spots: expenseTrendSpots,
-                                    isCurved: true,
-                                    color: Colors.red,
-                                    barWidth: 3,
-                                    isStrokeCapRound: true,
-                                    dotData: const FlDotData(show: false),
-                                    belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.3)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                           const SizedBox(height: 10),
-                          const Text(
-                            "Évolution des dépenses quotidiennes sur les 30 derniers jours.",
-                            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 32),
+                if (sortedExpenseData.isNotEmpty) ...[
+                  _buildSectionTitle("Répartition des dépenses"),
+                  _buildPieChartCard(sortedExpenseData, chartColorList, totalExpense),
+                ],
+                const SizedBox(height: 32),
+                if (expenseTrendSpots.isNotEmpty) ...[
+                  _buildSectionTitle("Évolution des dépenses"),
+                  _buildTrendCard(expenseTrendSpots),
+                ],
+                const SizedBox(height: 40),
               ],
             ),
           );
@@ -180,30 +124,69 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
     );
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAccountsSummaryCard(List<dynamic> accounts) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Soldes des comptes", style: Theme.of(context).textTheme.titleLarge),
-            const Divider(height: 20),
             if (accounts.isEmpty)
               const Text("Aucun compte trouvé.")
             else
-              ...accounts.map((account) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
+              ...accounts.asMap().entries.map((entry) {
+                final index = entry.key;
+                final account = entry.value;
+                return Column(
+                  children: [
+                    if (index > 0) Divider(color: Colors.grey[100], height: 24),
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(account[DbHelper.ACCOUNT_NAME], style: const TextStyle(fontSize: 16)),
-                        Text('${_formatAmount(account[DbHelper.ACCOUNT_BALANCE] as double)} FCFA', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: Colors.green.withOpacity(0.1),
+                              child: const Icon(Icons.account_balance_wallet_rounded, size: 18, color: Colors.green),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              account[DbHelper.ACCOUNT_NAME],
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${_formatAmount(account[DbHelper.ACCOUNT_BALANCE] as double)} FCFA',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
                       ],
                     ),
-                  )),
+                  ],
+                );
+              }),
           ],
         ),
       ),
@@ -217,40 +200,139 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.3,
       children: [
-        _buildStatCard('Solde Total', '${_formatAmount(stats['totalBalance'] as double)} FCFA', Icons.account_balance_wallet, Colors.blue),
+        _buildStatCard('Solde Total', '${_formatAmount(stats['totalBalance'] as double)} FCFA', Icons.account_balance_wallet, Colors.indigo),
         _buildStatCard('Comptes', stats['accountsCount'].toString(), Icons.credit_card, Colors.orange),
         _buildStatCard('Transactions', stats['transactionsCount'].toString(), Icons.swap_horiz, Colors.purple),
-        _buildStatCard('Budgets Actifs', stats['activeBudgetsCount'].toString(), Icons.inventory_2, Colors.green),
+        _buildStatCard('Budgets Actifs', stats['activeBudgetsCount'].toString(), Icons.inventory_2, const Color(0xFF10B981)),
       ],
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 22, color: color),
+            ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 30, color: color),
-                const SizedBox(height: 8),
-                Text(title, style: const TextStyle(fontSize: 16, color: Colors.black54)),
+                Text(title, style: TextStyle(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+                ),
               ],
-            ),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPieChartCard(Map<String, double> data, List<Color> colors, double total) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        children: [
+          pie.PieChart(
+            dataMap: data,
+            chartRadius: MediaQuery.of(context).size.width / 2.8,
+            legendOptions: const pie.LegendOptions(showLegends: false),
+            chartValuesOptions: const pie.ChartValuesOptions(
+              showChartValuesInPercentage: true, 
+              decimalPlaces: 1,
+              chartValueStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            colorList: colors,
+            chartType: pie.ChartType.ring,
+            ringStrokeWidth: 32,
+            centerTextStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54, fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+          _buildCustomLegend(data, total),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrendCard(List<FlSpot> spots) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: false),
+                titlesData: const FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    gradient: const LinearGradient(colors: [Colors.redAccent, Colors.orangeAccent]),
+                    barWidth: 4,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true, 
+                      gradient: LinearGradient(
+                        colors: [Colors.redAccent.withOpacity(0.2), Colors.redAccent.withOpacity(0)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.info_outline, size: 14, color: Colors.grey),
+              SizedBox(width: 8),
+              Text(
+                "Tendance quotidienne sur les 30 derniers jours",
+                style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -259,32 +341,38 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
     if (total == 0) return const SizedBox.shrink();
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: data.entries.toList().asMap().entries.map((indexedEntry) {
-        final index = indexedEntry.key;
-        final entry = indexedEntry.value;
+      children: data.entries.toList().map((entry) {
         final percentage = (entry.value / total) * 100;
         final color = _getCategoryColor(entry.key);
 
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(2),
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
-                '${index + 1} - ${entry.key} (${percentage.toStringAsFixed(1)}%)',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                '${_formatAmount(entry.value)} FCFA',
+                style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                child: Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+                ),
               ),
             ],
           ),
