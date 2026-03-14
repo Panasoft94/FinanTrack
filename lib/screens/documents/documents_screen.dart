@@ -30,49 +30,93 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   void _showCategorySelection(BuildContext context) async {
     final categories = await DbHelper.getCategories('expense');
-    categories.sort((a, b) => a.name.compareTo(b.name)); // Tri alphabétique
+    categories.sort((a, b) => a.name.compareTo(b.name));
+    
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        if (categories.isEmpty) {
-          return const SizedBox(
-            height: 200,
-            child: Center(
-              child: Text(
-                'Aucune catégorie de dépense à afficher.',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
               ),
-            ),
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                "Sélectionner une catégorie",
-                style: Theme.of(context).textTheme.titleLarge,
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.category_rounded, color: Colors.green),
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    "Catégorie de la dépense",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-            ),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return ListTile(
-                    title: Text(category.name),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showTransactionSelection(context, category);
+              const SizedBox(height: 8),
+              const Text(
+                "Choisissez une catégorie pour trouver la transaction à justifier.",
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              const SizedBox(height: 24),
+              if (categories.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 48, color: Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      const Text('Aucune catégorie de dépense.', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            child: const Icon(Icons.circle, size: 12, color: Colors.green),
+                          ),
+                          title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showTransactionSelection(context, category);
+                          },
+                        ),
+                      );
                     },
-                  );
-                },
-                separatorBuilder: (context, index) => const Divider(height: 1), // Séparateur
-              ),
-            ),
-          ],
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
@@ -141,41 +185,67 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       appBar: AppBar(
-        title: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.file_copy_outlined), SizedBox(width: 8), Text('Documents')]),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.folder_shared_rounded),
+            SizedBox(width: 12),
+            Text(
+              'Mes Documents',
+              style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            )
+          ],
+        ),
         centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero,
+        ),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _documentsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.green));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.find_in_page_outlined, size: 100, color: Colors.grey[300]),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "Aucun document justificatif",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Appuyez sur le bouton + pour en ajouter un.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.note_add_rounded, size: 80, color: Colors.green.withOpacity(0.2)),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Aucun justificatif",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Conservez vos reçus et factures en les associant à vos transactions.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15, color: Colors.grey[600], height: 1.5),
+                    ),
+                  ],
+                ),
               ),
             );
           }
           final documents = snapshot.data!;
           return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 80), // Add padding for FAB
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             itemCount: documents.length,
             itemBuilder: (context, index) {
               final doc = documents[index];
@@ -184,61 +254,75 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               final docPath = doc[DbHelper.DOCUMENT_PATH];
               final transactionCount = doc['transactions'].length;
               final createdAt = doc[DbHelper.DOCUMENT_CREATED_AT];
+              final extension = docName.split('.').last.toLowerCase();
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: InkWell(
-                  onTap: () => OpenFilex.open(docPath),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          docName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 6.0),
-                          child: Divider(),
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.link, color: Colors.grey[600], size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Associé à $transactionCount transaction(s)',
-                              style: TextStyle(color: Colors.grey[700]),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => OpenFilex.open(docPath),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          _buildFileIcon(extension),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  docName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.link_rounded, size: 14, color: Colors.green[600]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$transactionCount associé(s)',
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                    ),
+                                    if (createdAt != null) ...[
+                                      const SizedBox(width: 12),
+                                      Icon(Icons.access_time_rounded, size: 14, color: Colors.grey[400]),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        DateFormat('dd/MM/yy').format(DateTime.parse(createdAt)),
+                                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
                             ),
-                            const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
-                              onPressed: () => _showDeleteConfirmationDialog(docId, docName),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              tooltip: 'Supprimer le document',
+                          ),
+                          IconButton(
+                            icon: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), shape: BoxShape.circle),
+                              child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
                             ),
-                          ],
-                        ),
-                        if (createdAt != null) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Icon(Icons.calendar_today_outlined, color: Colors.grey[600], size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Ajouté le ${DateFormat.yMd('fr_FR').format(DateTime.parse(createdAt))}',
-                                style: TextStyle(color: Colors.grey[700], fontSize: 12, fontStyle: FontStyle.italic),
-                              ),
-                            ],
+                            onPressed: () => _showDeleteConfirmationDialog(docId, docName),
                           ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -247,13 +331,52 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCategorySelection(context),
         backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        tooltip: 'Ajouter un document',
-        child: const Icon(Icons.add),
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text("NOUVEAU DOCUMENT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
+    );
+  }
+
+  Widget _buildFileIcon(String extension) {
+    Color color;
+    IconData icon;
+    switch (extension) {
+      case 'pdf':
+        color = Colors.red[400]!;
+        icon = Icons.picture_as_pdf_rounded;
+        break;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        color = Colors.blue[400]!;
+        icon = Icons.image_rounded;
+        break;
+      case 'doc':
+      case 'docx':
+        color = Colors.blue[700]!;
+        icon = Icons.description_rounded;
+        break;
+      case 'xls':
+      case 'xlsx':
+        color = Colors.green[700]!;
+        icon = Icons.table_chart_rounded;
+        break;
+      default:
+        color = Colors.grey[400]!;
+        icon = Icons.insert_drive_file_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: color, size: 28),
     );
   }
 }
