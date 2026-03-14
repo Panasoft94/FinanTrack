@@ -264,9 +264,12 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
             chartRadius: MediaQuery.of(context).size.width / 2.8,
             legendOptions: const pie.LegendOptions(showLegends: false),
             chartValuesOptions: const pie.ChartValuesOptions(
-              showChartValuesInPercentage: true, 
+              showChartValueBackground: false,
+              showChartValues: true,
+              showChartValuesInPercentage: true,
+              showChartValuesOutside: true,
               decimalPlaces: 1,
-              chartValueStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+              chartValueStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             colorList: colors,
             chartType: pie.ChartType.ring,
@@ -359,8 +362,11 @@ class _DataStatisticsScreenState extends State<DataStatisticsScreen> {
                 child: Text(
                   entry.key,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${_formatAmount(entry.value)} FCFA',
                 style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.bold),

@@ -53,10 +53,10 @@ L'expérience utilisateur a été globalement modernisée ("Material 3 / Clean D
 - **Sécurité & PIN** : Refonte de l'interface de changement de code PIN avec un clavier numérique virtuel optimisé et un retour visuel sécurisé.
 - **Uniformisation** : Suppression des bordures arrondies sur les AppBars pour un look plus professionnel et moderne, tout en conservant l'identité visuelle verte de l'application.
 
-### 📈 Visualisation de Données (Tendances)
-- Intégration de graphiques de tendances hebdomadaires comparant les revenus et les dépenses.
-- Tooltips interactifs pour explorer les montants point par point sur la courbe.
-- Résumé analytique automatique de la semaine pour une prise de décision rapide.
+### 📈 Visualisation de Données & Algorithmes
+- **Courbes de Tendances** : Graphiques hebdomadaires comparant revenus et dépenses avec tooltips interactifs.
+- **Algorithme de Neutralité** : Les virements internes entre comptes personnels sont désormais détectés et exclus des calculs de revenus/dépenses réels pour ne pas fausser le solde net de l'analyse hebdomadaire.
+- **Optimisation de la Lisibilité** : Les graphiques circulaires affichent désormais les pourcentages à l'extérieur pour une clarté maximale, et les longs noms de catégories sont intelligemment tronqués (ellipsis) pour éviter les chevauchements.
 
 ---
 

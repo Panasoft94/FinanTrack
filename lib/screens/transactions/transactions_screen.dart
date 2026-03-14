@@ -498,8 +498,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     
     final lastWeekTransactions = allTransactions.where((t) => t.date.isAfter(sevenDaysAgo)).toList();
-    final double totalIncome = lastWeekTransactions.where((t) => t.type == 'income').fold(0.0, (sum, t) => sum + t.amount);
-    final double totalExpense = lastWeekTransactions.where((t) => t.type == 'expense').fold(0.0, (sum, t) => sum + t.amount);
+    final double totalIncome = lastWeekTransactions.where((t) => t.type == 'income' && t.type != 'Virement interne').fold(0.0, (sum, t) => sum + t.amount);
+    final double totalExpense = lastWeekTransactions.where((t) => t.type == 'expense' && t.type != 'Virement interne').fold(0.0, (sum, t) => sum + t.amount);
     final double balance = totalIncome - totalExpense;
 
     return Container(
