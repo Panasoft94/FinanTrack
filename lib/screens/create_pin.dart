@@ -29,7 +29,8 @@ class _CreatePinPageState extends State<CreatePinPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(elevation: 6,
+      appBar: AppBar(
+        elevation: 0,
         toolbarHeight: 65,
         backgroundColor: Colors.green,
         title: const Text(
@@ -42,57 +43,145 @@ class _CreatePinPageState extends State<CreatePinPage> {
           ),
         ),
         centerTitle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
       ),
       body: SafeArea(
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 24,),
-              Text("Entrer pin",style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                  color: Colors.black
-              ),),
-              SizedBox(height: 10,),
-              Text("Veuillez entrer votre code pin de 6 chiffres ! ",style: TextStyle(fontStyle: FontStyle.italic),),
-              SizedBox(height: 10,),
-              Pinput(
-                length: 6,
-                obscureText: true,
-                autofocus: true,
-                controller: controller,
-              ),
-              SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: (){
-                  _addUser();
-                  //on redirige l'utilisateur vers la page d'authentification
-                  Navigator.pushAndRemoveUntil(context,
-                    MaterialPageRoute(
-                      builder: (context)=>LoginPage(),), (route) =>false,
-                  );  //fin de la fonction de redirection
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text("Votre nouveau pin a été créé avec succès !",style: TextStyle(color: Colors.white),),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: Colors.green,
-                      showCloseIcon: true,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    )
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 48),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_outline_rounded,
+                    size: 80,
+                    color: Colors.green,
+                  ),
                 ),
-                child: const Text("Enregistrer",style: TextStyle(fontSize: 15,color: Colors.white),),
-              ),
-            ],
+                const SizedBox(height: 32),
+                const Text(
+                  "Sécurisez votre compte",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "Veuillez définir un code PIN de 6 chiffres pour protéger vos données financières.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                Pinput(
+                  length: 6,
+                  obscureText: true,
+                  autofocus: true,
+                  keyboardType: TextInputType.number,
+                  controller: controller,
+                  defaultPinTheme: PinTheme(
+                    width: 50,
+                    height: 60,
+                    textStyle: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                  ),
+                  focusedPinTheme: PinTheme(
+                    width: 50,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 64),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (controller.text.length == 6) {
+                        _addUser();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                          (route) => false,
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Votre nouveau pin a été créé avec succès !",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.green,
+                            showCloseIcon: true,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Veuillez entrer un code PIN de 6 chiffres"),
+                            backgroundColor: Colors.redAccent,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      "ENREGISTRER LE PIN",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
+        ),
       ),
     );
   }
