@@ -324,6 +324,7 @@ class _VirementCompteScreenState extends State<VirementCompteScreen> {
         DropdownButtonFormField<Account>(
           value: value,
           icon: const Icon(Icons.expand_more_rounded, color: Colors.grey),
+          itemHeight: null, // Permet à l'élément de s'adapter au contenu et d'éviter l'overflow
           elevation: 16,
           isExpanded: true,
           decoration: InputDecoration(

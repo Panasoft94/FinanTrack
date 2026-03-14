@@ -263,8 +263,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
         final date = sortedDates[index];
         final dailyTransactions = groupedTransactions[date]!;
 
-        final double dailyIncome = dailyTransactions.where((t) => t.type == 'income').fold(0, (sum, t) => sum + t.amount);
-        final double dailyExpense = dailyTransactions.where((t) => t.type == 'expense').fold(0, (sum, t) => sum + t.amount);
+        final double dailyIncome = dailyTransactions.where((t) => t.type == 'income' && t.categoryName != 'Virement Interne').fold(0, (sum, t) => sum + t.amount);
+        final double dailyExpense = dailyTransactions.where((t) => t.type == 'expense' && t.categoryName != 'Virement Interne').fold(0, (sum, t) => sum + t.amount);
         final double dailyNet = dailyIncome - dailyExpense;
 
         return Column(
@@ -329,8 +329,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
         return t.date.year == day.year && t.date.month == day.month && t.date.day == day.day;
       }).toList();
 
-      final dailyExpense = dayTransactions.where((t) => t.type == 'expense').fold(0.0, (sum, t) => sum + t.amount);
-      final dailyIncome = dayTransactions.where((t) => t.type == 'income').fold(0.0, (sum, t) => sum + t.amount);
+      final dailyExpense = dayTransactions.where((t) => t.type == 'expense' && t.categoryName != 'Virement Interne').fold(0.0, (sum, t) => sum + t.amount);
+      final dailyIncome = dayTransactions.where((t) => t.type == 'income' && t.categoryName != 'Virement Interne').fold(0.0, (sum, t) => sum + t.amount);
 
       expenseSpots.add(FlSpot(i.toDouble(), dailyExpense));
       incomeSpots.add(FlSpot(i.toDouble(), dailyIncome));
@@ -498,8 +498,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     
     final lastWeekTransactions = allTransactions.where((t) => t.date.isAfter(sevenDaysAgo)).toList();
-    final double totalIncome = lastWeekTransactions.where((t) => t.type == 'income' && t.type != 'Virement interne').fold(0.0, (sum, t) => sum + t.amount);
-    final double totalExpense = lastWeekTransactions.where((t) => t.type == 'expense' && t.type != 'Virement interne').fold(0.0, (sum, t) => sum + t.amount);
+    final double totalIncome = lastWeekTransactions.where((t) => t.type == 'income' && t.categoryName != 'Virement Interne').fold(0.0, (sum, t) => sum + t.amount);
+    final double totalExpense = lastWeekTransactions.where((t) => t.type == 'expense' && t.categoryName != 'Virement Interne').fold(0.0, (sum, t) => sum + t.amount);
     final double balance = totalIncome - totalExpense;
 
     return Container(
