@@ -57,9 +57,10 @@ class _LicencePageState extends State<LicencePage> {
         return true; 
       },
       child: Scaffold(
+        backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          elevation: 6,
-          toolbarHeight: 65,
+          elevation: 0,
+          toolbarHeight: 70,
           backgroundColor: Colors.green,
           title: const Text(
             "Conditions d'utilisation",
@@ -67,37 +68,87 @@ class _LicencePageState extends State<LicencePage> {
               fontWeight: FontWeight.bold,
               fontSize: 20,
               color: Colors.white,
-              letterSpacing: 1.2,
+              letterSpacing: 0.5,
             ),
           ),
           centerTitle: true,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+            borderRadius: BorderRadius.zero,
           ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
-              );
-            },
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                      (route) => false,
+                );
+              },
+            ),
           ),
         ),
         body: Column(
           children: [
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Scrollbar(
-                  thumbVisibility: true,
-                  controller: _scrollController,
-                  child: SingleChildScrollView(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Scrollbar(
+                    thumbVisibility: true,
                     controller: _scrollController,
-                    child: Text(
-                      _licenseText,
-                      style: const TextStyle(fontSize: 14, height: 1.5),
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.gavel_rounded, color: Colors.green, size: 32),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Center(
+                            child: Text(
+                              "Contrat de Licence Utilisateur Final",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            _licenseText,
+                            style: TextStyle(
+                              fontSize: 14, 
+                              height: 1.6,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -105,69 +156,115 @@ class _LicencePageState extends State<LicencePage> {
             ),
             AnimatedOpacity(
               duration: const Duration(milliseconds: 500),
-              opacity: _hasScrolledToEnd ? 1.0 : 0.3,
-              child: Column(
-                children: [
-                  CheckboxListTile(
-                    title: const Text("J'ai lu et j'accepte les termes du contrat"),
-                    value: _isChecked,
-                    onChanged: _hasScrolledToEnd
-                        ? (val) => setState(() => _isChecked = val ?? false)
-                        : null,
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.check, color: Colors.white),
-                      label: const Text("Continuer", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      onPressed: () async { // MODIFIÉ: devient async
-                        if (_isChecked && _hasScrolledToEnd) {
-                          print("LICENCE_PAGE: Conditions met. Attempting to update licence..."); // DEBUG
-                          try {
-                            await _updateUserLicence(); // MODIFIÉ: await l'appel
-                            print("LICENCE_PAGE: Licence updated. Popping with true."); // DEBUG
-                            if (mounted) Navigator.of(context).pop(true);
-                          } catch (e) {
-                            print("LICENCE_PAGE: Error updating licence: $e. Popping with false."); // DEBUG
-                            if (mounted) Navigator.of(context).pop(false);
-                            if (mounted) { 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Erreur lors de l'acceptation de la licence.", style: TextStyle(color: Colors.white)),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+              opacity: _hasScrolledToEnd ? 1.0 : 0.4,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: _isChecked ? Colors.green.withOpacity(0.05) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _isChecked ? Colors.green : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: CheckboxListTile(
+                        title: Text(
+                          "J'ai lu et j'accepte les termes du contrat",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: _isChecked ? Colors.green.shade700 : Colors.black87,
+                          ),
+                        ),
+                        value: _isChecked,
+                        onChanged: _hasScrolledToEnd
+                            ? (val) => setState(() => _isChecked = val ?? false)
+                            : null,
+                        activeColor: Colors.green,
+                        checkColor: Colors.white,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(27),
+                        boxShadow: _isChecked && _hasScrolledToEnd 
+                          ? [BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))]
+                          : [],
+                      ),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                        label: const Text(
+                          "Continuer", 
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)
+                        ),
+                        onPressed: () async { 
+                          if (_isChecked && _hasScrolledToEnd) {
+                            print("LICENCE_PAGE: Conditions met. Attempting to update licence..."); // DEBUG
+                            try {
+                              await _updateUserLicence(); // MODIFIÉ: await l'appel
+                              print("LICENCE_PAGE: Licence updated. Popping with true."); // DEBUG
+                              if (mounted) Navigator.of(context).pop(true);
+                            } catch (e) {
+                              print("LICENCE_PAGE: Error updating licence: $e. Popping with false."); // DEBUG
+                              if (mounted) Navigator.of(context).pop(false);
+                              if (mounted) { 
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Erreur lors de l'acceptation de la licence.", style: TextStyle(color: Colors.white)),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
+                          } else if (!_hasScrolledToEnd) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text("Veuillez lire l'intégralité des termes.", style: TextStyle(color: Colors.white)),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.blue,
+                              ),
+                            );
+                          } else { // _isChecked is false
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text("Veuillez accepter les termes avant de continuer !", style: TextStyle(color: Colors.white)),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.blue,
+                              ),
+                            );
                           }
-                        } else if (!_hasScrolledToEnd) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text("Veuillez lire l'intégralité des termes.", style: TextStyle(color: Colors.white)),
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: Colors.blue,
-                            ),
-                          );
-                        } else { // _isChecked is false
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text("Veuillez accepter les termes avant de continuer !", style: TextStyle(color: Colors.white)),
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: Colors.blue,
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          disabledBackgroundColor: Colors.grey.shade400,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(27),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

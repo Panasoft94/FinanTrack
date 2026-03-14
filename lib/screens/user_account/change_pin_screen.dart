@@ -64,6 +64,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -76,92 +77,126 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
         centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
+              _buildHeaderIcon(),
+              const SizedBox(height: 32),
+              _buildInstructionText(),
+              const SizedBox(height: 32),
+              _buildPinField(
                 controller: _oldPinController,
-                obscureText: !_oldPinVisible,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                decoration: InputDecoration(
-                  labelText: 'Ancien code PIN',
-                  prefixIcon: const Icon(Icons.lock_open_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  suffixIcon: IconButton(
-                    icon: Icon(_oldPinVisible ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _oldPinVisible = !_oldPinVisible),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.length != 6) return 'Veuillez entrer un code à 6 chiffres.';
-                  return null;
-                },
+                label: 'Ancien code PIN',
+                isVisible: _oldPinVisible,
+                onVisibilityToggle: () => setState(() => _oldPinVisible = !_oldPinVisible),
+                icon: Icons.lock_open_outlined,
               ),
-              const SizedBox(height: 20),
-              TextFormField(
+              const SizedBox(height: 16),
+              _buildPinField(
                 controller: _newPinController,
-                obscureText: !_newPinVisible,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                decoration: InputDecoration(
-                  labelText: 'Nouveau code PIN',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                   suffixIcon: IconButton(
-                    icon: Icon(_newPinVisible ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _newPinVisible = !_newPinVisible),
-                  ),
-                ),
+                label: 'Nouveau code PIN',
+                isVisible: _newPinVisible,
+                onVisibilityToggle: () => setState(() => _newPinVisible = !_newPinVisible),
+                icon: Icons.lock_outline,
                 validator: (value) {
-                  if (value == null || value.length != 6) return 'Veuillez entrer un code à 6 chiffres.';
-                  if (value == _oldPinController.text) return 'Le nouveau code PIN doit être différent.';
+                  if (value == null || value.length != 6) return 'Veuillez entrer 6 chiffres.';
+                  if (value == _oldPinController.text) return 'Doit être différent de l\'ancien.';
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              TextFormField(
+              const SizedBox(height: 16),
+              _buildPinField(
                 controller: _confirmPinController,
-                obscureText: !_confirmPinVisible,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                decoration: InputDecoration(
-                  labelText: 'Confirmer le nouveau PIN',
-                  prefixIcon: const Icon(Icons.lock_person_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                   suffixIcon: IconButton(
-                    icon: Icon(_confirmPinVisible ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _confirmPinVisible = !_confirmPinVisible),
-                  ),
-                ),
+                label: 'Confirmer le nouveau PIN',
+                isVisible: _confirmPinVisible,
+                onVisibilityToggle: () => setState(() => _confirmPinVisible = !_confirmPinVisible),
+                icon: Icons.lock_person_outlined,
                 validator: (value) {
-                  if (value != _newPinController.text) return 'Les codes PIN ne correspondent pas.';
+                  if (value != _newPinController.text) return 'Les codes ne correspondent pas.';
                   return null;
                 },
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
               _isSaving
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton.icon(
-                      icon: const Icon(Icons.save_as_outlined),
-                      label: const Text('Mettre à jour le code PIN'),
+                  ? const Center(child: CircularProgressIndicator(color: Colors.green))
+                  : ElevatedButton(
                       onPressed: _changePin,
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 55),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      child: const Text('Mettre à jour le code PIN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeaderIcon() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle),
+        child: const Icon(Icons.shield_outlined, size: 64, color: Colors.green),
+      ),
+    );
+  }
+
+  Widget _buildInstructionText() {
+    return Column(
+      children: [
+        const Text('Sécurisez votre compte', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+        const SizedBox(height: 8),
+        Text(
+          'Votre code PIN doit être composé de 6 chiffres pour garantir la sécurité de vos données financières.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPinField({
+    required TextEditingController controller,
+    required String label,
+    required bool isVisible,
+    required VoidCallback onVisibilityToggle,
+    required IconData icon,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: !isVisible,
+      keyboardType: TextInputType.number,
+      maxLength: 6,
+      style: const TextStyle(letterSpacing: 8, fontSize: 18, fontWeight: FontWeight.bold),
+      decoration: InputDecoration(
+        labelText: label,
+        counterText: "",
+        prefixIcon: Icon(icon, color: Colors.green),
+        filled: true,
+        fillColor: Colors.white,
+        suffixIcon: IconButton(
+          icon: Icon(isVisible ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+          onPressed: onVisibilityToggle,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.green, width: 2)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      validator: validator ?? (value) => (value == null || value.length != 6) ? 'Veuillez entrer 6 chiffres.' : null,
     );
   }
 }

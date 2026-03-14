@@ -85,85 +85,183 @@ class _InitDataScreenState extends State<InitDataScreen> with TickerProviderStat
     final int messageIndex = (progress * messages.length).clamp(0, messages.length - 1).toInt();
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ScaleTransition(
-                  scale: Tween(begin: 0.9, end: 1.1).animate(CurvedAnimation(
-                    parent: _logoController,
-                    curve: Curves.easeInOut,
-                  )),
-                  child: const Icon(Icons.sync, size: 80, color: Colors.blueAccent),
-                ),
-                const SizedBox(height: 20),
-                Text(messages[messageIndex], style: const TextStyle(fontSize: 18)),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: 200,
-                  child: LinearProgressIndicator(value: progress),
-                ),
-                const SizedBox(height: 10),
-                Text("${(progress * 100).toInt()}%", style: const TextStyle(fontSize: 16)),
-              ],
-            ),
+      backgroundColor: Colors.grey[50],
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Colors.blue.shade50.withOpacity(0.5),
+            ],
           ),
-          if (progress == 1.0)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: ScaleTransition(
-                  scale: _buttonAnimation,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: const [
-                              Icon(Icons.check_circle, color: Colors.white),
-                              SizedBox(width: 12),
-                              Expanded(child: Text("Initialisation terminée 👋 ")),
-                            ],
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.green.shade600,
-                          showCloseIcon: true,
-                          duration: const Duration(seconds: 2),
-                          elevation: 6,
-                        ),
-                      );
-
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-                            (route) => false,
-                      );
-                    },
-                    icon: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-                      child: const Icon(Icons.arrow_forward, key: ValueKey('arrow')),
-                    ),
-                    label: const Text("Tu peux aller →"),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      elevation: 4,
-                    ),
-                  )
+        ),
+        child: Stack(
+          children: [
+            // Eléments décoratifs en arrière-plan
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100.withOpacity(0.2),
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
-        ],
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.1),
+                          blurRadius: 30,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: ScaleTransition(
+                      scale: Tween(begin: 0.9, end: 1.1).animate(CurvedAnimation(
+                        parent: _logoController,
+                        curve: Curves.easeInOut,
+                      )),
+                      child: const Icon(Icons.auto_awesome_rounded, size: 80, color: Colors.blueAccent),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Text(
+                    "Initialisation",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade900,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Text(
+                      messages[messageIndex],
+                      key: ValueKey(messages[messageIndex]),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 50),
+                  Container(
+                    width: 250,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 12,
+                        backgroundColor: Colors.grey.shade100,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "${(progress * 100).toInt()}%",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (progress == 1.0)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 60),
+                  child: ScaleTransition(
+                    scale: _buttonAnimation,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: const [
+                                  Icon(Icons.check_circle, color: Colors.white),
+                                  SizedBox(width: 12),
+                                  Expanded(child: Text("Initialisation terminée 👋 ")),
+                                ],
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.green.shade600,
+                              showCloseIcon: true,
+                              duration: const Duration(seconds: 2),
+                              elevation: 6,
+                            ),
+                          );
+
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+                                (route) => false,
+                          );
+                        },
+                        icon: const Icon(Icons.rocket_launch_rounded, key: ValueKey('rocket'), color: Colors.white),
+                        label: const Text(
+                          "C'est parti !",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

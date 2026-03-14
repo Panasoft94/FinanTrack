@@ -512,7 +512,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
           child: _transactions.isEmpty
               ? _buildEmptyState()
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
                   itemCount: groupedTransactions.length,
                   itemBuilder: (context, index) {
                     String monthName = groupedTransactions.keys.elementAt(index);
@@ -677,3 +677,5 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
     );
   }
 }
+
+

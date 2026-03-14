@@ -75,92 +75,207 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final defaultPinTheme = PinTheme(
+      width: 45,
+      height: 55,
+      textStyle: const TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+
+    final focusedPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        border: Border.all(color: Colors.green, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        elevation: 6,
-        toolbarHeight: 65,
+        elevation: 0,
+        toolbarHeight: 70,
         backgroundColor: Colors.green,
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
+        title: const Column(
           children: [
-            Icon(Icons.lock_outline),
-            SizedBox(width: 8),
-            Text('FinanTrack verrouillé'),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.security_rounded, size: 22, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'FinanTrack',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ],
+            ),
+            Text(
+              'Espace Sécurisé',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.white70),
+            ),
           ],
         ),
         foregroundColor: Colors.white,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(6)),
+          borderRadius: BorderRadius.zero,
         ),
       ),
       body: SafeArea(
-        child: Center(
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.green.withOpacity(0.05),
+                Colors.white,
+              ],
+            ),
+          ),
           child: Column(
             children: [
-              const SizedBox(height: 24),
-              const Text(
-                "Déverouillage par code pin",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    color: Colors.black),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "Veuillez entrer votre code pin de 6 chiffres !",
-                style: TextStyle(fontStyle: FontStyle.italic),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              Pinput(
-                controller: controller,
-                length: 6,
-                onCompleted: _onCompleted,
-                obscureText: true,
-                autofocus: true,
-                focusNode: _pinFocusNode,
-              ),
-              const SizedBox(height: 12),
-              const Spacer(),
-              if (biometricAvailable && _users.isNotEmpty)
-                Column(
-                  children: <Widget>[
-                    const Text(
-                      "OU",
-                      style: TextStyle(
-                          fontSize: 23,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
+              const SizedBox(height: 48),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                    const SizedBox(height: 38),
-                    InkWell(
-                      onTap: _biometricAuthentication,
-                      borderRadius: BorderRadius.circular(30),
-                      child: Container(
-                        width: 75,
-                        height: 75,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.green,
-                          border: Border.all(color: Colors.green),
-                        ),
-                        child: isLoading
-                            ? const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white),
-                        )
-                            : const Icon(Icons.fingerprint,
-                            size: 65, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text("Empreinte biométrique"),
                   ],
                 ),
-              const SizedBox(height: 30),
+                child: const Icon(Icons.lock_open_rounded, size: 50, color: Colors.green),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                "Déverrouillage",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 26,
+                  color: Colors.black87,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Saisissez votre code PIN de 6 chiffres",
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Pinput(
+                  controller: controller,
+                  length: 6,
+                  onCompleted: _onCompleted,
+                  obscureText: true,
+                  autofocus: true,
+                  focusNode: _pinFocusNode,
+                  defaultPinTheme: defaultPinTheme,
+                  focusedPinTheme: focusedPinTheme,
+                  separatorBuilder: (index) => const SizedBox(width: 10),
+                  hapticFeedbackType: HapticFeedbackType.lightImpact,
+                ),
+              ),
+              const Spacer(),
+              if (biometricAvailable && _users.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: [
+                          const Expanded(child: Divider(indent: 40, endIndent: 20)),
+                          Text(
+                            "OU",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade400,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const Expanded(child: Divider(indent: 20, endIndent: 40)),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      InkWell(
+                        onTap: _biometricAuthentication,
+                        borderRadius: BorderRadius.circular(40),
+                        child: Container(
+                          width: 85,
+                          height: 85,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.green.shade50, width: 2),
+                          ),
+                          child: Center(
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.green,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                : Icon(Icons.fingerprint_rounded,
+                                    size: 50, color: Colors.green.shade700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Touch ID / Face ID",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green.shade700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

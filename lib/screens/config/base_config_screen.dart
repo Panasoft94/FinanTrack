@@ -115,15 +115,17 @@ class _BaseConfigScreenState extends State<BaseConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.settings_applications), SizedBox(width: 8), Text('Configuration de base')]),
         centerTitle: true,
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           if (_isEditing)
             IconButton(
-              icon: const Icon(Icons.cancel_outlined),
+              icon: const Icon(Icons.close),
               onPressed: _cancelEdit,
               tooltip: 'Annuler les modifications',
             )
@@ -177,57 +179,64 @@ class _BaseConfigScreenState extends State<BaseConfigScreen> {
 
           return Form(
             key: _formKey,
-            child: AbsorbPointer(
-              absorbing: !_isEditing,
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  _buildSectionTitle(context, 'Général', Icons.tune),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    readOnly: !_isEditing,
-                    controller: _appNameController,
-                    decoration: _buildInputDecoration('Nom de l\'application'),
-                    validator: (value) => value!.isEmpty ? 'Ce champ est requis.' : null,
-                  ),
-                  const SizedBox(height: 30),
-
-                  _buildSectionTitle(context, 'Internationalisation', Icons.language),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: _selectedLanguage,
-                    decoration: _buildInputDecoration('Langue par défaut'),
-                    items: languages.map((lang) => DropdownMenuItem(value: lang, child: Text(lang))).toList(),
-                    onChanged: _isEditing ? (value) => setState(() => _selectedLanguage = value) : null,
-                  ),
-                  const SizedBox(height: 15),
-
-                  DropdownButtonFormField2<int>(
-                    decoration: _buildInputDecoration('Devise par défaut'),
-                    isExpanded: true,
-                    value: _selectedDeviseId,
-                    items: devises.map((devise) => DropdownMenuItem(value: devise.id, child: Text('${devise.libelle} (${devise.symbole})'))).toList(),
-                    onChanged: _isEditing ? (value) => setState(() => _selectedDeviseId = value) : null,
-                    dropdownStyleData: DropdownStyleData(
-                      maxHeight: 200,
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
-                      elevation: 8,
-                      offset: const Offset(0, -5),
+            child: ListView(
+              padding: const EdgeInsets.all(20.0),
+              children: [
+                _buildSectionCard(
+                  title: 'Général',
+                  icon: Icons.tune,
+                  children: [
+                    TextFormField(
+                      enabled: _isEditing,
+                      controller: _appNameController,
+                      decoration: _buildInputDecoration('Nom de l\'application', Icons.app_registration),
+                      validator: (value) => value!.isEmpty ? 'Ce champ est requis.' : null,
                     ),
-                  ),
-
-                  const SizedBox(height: 30),
-                  
-                  _buildSectionTitle(context, 'Données', Icons.calendar_today),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<int>(
-                    value: _selectedYear,
-                    decoration: _buildInputDecoration('Année par défaut'),
-                    items: years.map((year) => DropdownMenuItem(value: year, child: Text(year.toString()))).toList(),
-                    onChanged: _isEditing ? (value) => setState(() => _selectedYear = value) : null,
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildSectionCard(
+                  title: 'Internationalisation',
+                  icon: Icons.language,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedLanguage,
+                      decoration: _buildInputDecoration('Langue par défaut', Icons.translate),
+                      items: languages.map((lang) => DropdownMenuItem(value: lang, child: Text(lang))).toList(),
+                      onChanged: _isEditing ? (value) => setState(() => _selectedLanguage = value) : null,
+                      dropdownColor: Colors.white,
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField2<int>(
+                      decoration: _buildInputDecoration('Devise par défaut', Icons.paid_outlined),
+                      isExpanded: true,
+                      value: _selectedDeviseId,
+                      items: devises.map((devise) => DropdownMenuItem(value: devise.id, child: Text('${devise.libelle} (${devise.symbole})'))).toList(),
+                      onChanged: _isEditing ? (value) => setState(() => _selectedDeviseId = value) : null,
+                      dropdownStyleData: DropdownStyleData(
+                        maxHeight: 200,
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), color: Colors.white),
+                        elevation: 8,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildSectionCard(
+                  title: 'Données',
+                  icon: Icons.calendar_today,
+                  children: [
+                    DropdownButtonFormField<int>(
+                      value: _selectedYear,
+                      decoration: _buildInputDecoration('Année par défaut', Icons.event_note),
+                      items: years.map((year) => DropdownMenuItem(value: year, child: Text(year.toString()))).toList(),
+                      onChanged: _isEditing ? (value) => setState(() => _selectedYear = value) : null,
+                      dropdownColor: Colors.white,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 100), // Espace pour le FAB
+              ],
             ),
           );
         },
@@ -248,15 +257,59 @@ class _BaseConfigScreenState extends State<BaseConfigScreen> {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
-    return Row(children: [Icon(icon, color: Colors.grey[600]), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleLarge)]);
+  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: Colors.green, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ...children,
+        ],
+      ),
+    );
   }
 
-  InputDecoration _buildInputDecoration(String label) {
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
     return InputDecoration(
-      labelText: label, 
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.green, size: 20),
+      filled: true,
+      fillColor: Colors.grey[50],
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.green, width: 2)),
+      disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      labelStyle: TextStyle(color: Colors.grey[600]),
     );
   }
 }
